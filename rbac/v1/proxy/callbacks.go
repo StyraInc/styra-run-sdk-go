@@ -9,6 +9,16 @@ import (
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
 )
 
+type DefaultCallbackSettings struct {
+	GetAuthz api.GetAuthz
+}
+
+func DefaultCallbacks(settings *DefaultCallbackSettings) *Callbacks {
+	return &Callbacks{
+		GetAuthz: settings.GetAuthz,
+	}
+}
+
 type ArrayCallbackSettings struct {
 	GetAuthz api.GetAuthz
 	Users    []*rbac.User

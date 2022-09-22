@@ -3,7 +3,7 @@ package proxy
 import (
 	"net/http"
 
-	"github.com/styrainc/styra-run-sdk-go/api/v1"
+	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 )
 
@@ -17,15 +17,15 @@ type Route struct {
 	Handler http.HandlerFunc
 }
 
-type OnModifyBatchQueryInput func(authz *v1.Authz, input interface{}) interface{}
+type OnModifyBatchQueryInput func(authz *api.Authz, input interface{}) interface{}
 
 type Callbacks struct {
-	GetAuthz                v1.GetAuthz
+	GetAuthz                api.GetAuthz
 	OnModifyBatchQueryInput OnModifyBatchQueryInput
 }
 
 type Settings struct {
-	Client    v1.Client
+	Client    api.Client
 	Callbacks *Callbacks
 }
 
@@ -59,11 +59,11 @@ func (p *proxy) BatchQuery() *Route {
 			return
 		}
 
-		queries := make([]v1.Query, 0)
+		queries := make([]api.Query, 0)
 		for _, item := range request.Items {
 			queries = append(
 				queries,
-				v1.Query{
+				api.Query{
 					Path:  item.Path,
 					Input: item.Input,
 				},
@@ -85,7 +85,7 @@ func (p *proxy) BatchQuery() *Route {
 			}
 		}
 
-		// Make the request. If an error occurs and it's an http error, forward
+		// Make the request. If an error occurs, and if it's a http error, forward
 		// the payload on from the backend with the appropriate status code.
 		if err := p.settings.Client.BatchQuery(r.Context(), queries, request.Input); err != nil {
 			utils.ForwardHttpError(w, err)

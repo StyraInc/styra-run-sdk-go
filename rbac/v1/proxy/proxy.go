@@ -5,7 +5,7 @@ import (
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
-	v1 "github.com/styrainc/styra-run-sdk-go/rbac/v1"
+	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
 )
 
 const (
@@ -22,13 +22,13 @@ type Route struct {
 
 type GetUrlVar func(r *http.Request, key string) string
 
-type GetUsers func(r *http.Request, bytes []byte) ([]*v1.User, interface{}, error)
+type GetUsers func(r *http.Request, bytes []byte) ([]*rbac.User, interface{}, error)
 
-type OnGetUserBinding func(user *v1.User) (int, error)
+type OnGetUserBinding func(user *rbac.User) (int, error)
 
-type OnPutUserBinding func(user *v1.User) (int, error)
+type OnPutUserBinding func(user *rbac.User) (int, error)
 
-type OnDeleteUserBinding func(user *v1.User) (int, error)
+type OnDeleteUserBinding func(user *rbac.User) (int, error)
 
 type Callbacks struct {
 	GetAuthz            api.GetAuthz
@@ -54,14 +54,14 @@ type Proxy interface {
 
 type proxy struct {
 	settings *Settings
-	rbac     v1.Rbac
+	rbac     rbac.Rbac
 }
 
 func New(settings *Settings) Proxy {
 	return &proxy{
 		settings: settings,
-		rbac: v1.New(
-			&v1.Settings{
+		rbac: rbac.New(
+			&rbac.Settings{
 				Client: settings.Client,
 			},
 		),
@@ -106,47 +106,17 @@ func (p *proxy) ListUserBindings() *Route {
 			return
 		}
 
-		query, ok := utils.HasSingleQueryParameter(w, r, "page")
-		if !ok {
-			return
-		}
-
-		users, page, err := p.settings.Callbacks.GetUsers(r, []byte(query))
-		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
-		}
-
 		authz, err := p.settings.Callbacks.GetAuthz(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
 		}
 
-		bindings, err := p.rbac.ListUserBindings(r.Context(), authz, users)
-		if err != nil {
-			utils.ForwardHttpError(w, err)
-			return
+		if p.settings.Callbacks.GetUsers == nil {
+			p.listUserBindingsAll(w, r, authz)
+		} else {
+			p.listUserBindings(w, r, authz)
 		}
-
-		response := &ListUserBindingsResponse{
-			Result: make([]*ListUserBinding, len(users)),
-			Page:   page,
-		}
-
-		for i, binding := range bindings {
-			value := &ListUserBinding{
-				Id: users[i].Id,
-			}
-
-			if binding != nil {
-				value.Roles = binding.Roles
-			}
-
-			response.Result[i] = value
-		}
-
-		utils.WriteResponse(w, response)
 	}
 
 	return &Route{
@@ -154,6 +124,46 @@ func (p *proxy) ListUserBindings() *Route {
 		Method:  http.MethodGet,
 		Handler: handler,
 	}
+}
+
+func (p *proxy) listUserBindingsAll(w http.ResponseWriter, r *http.Request, authz *api.Authz) {
+	bindings, err := p.rbac.ListUserBindingsAll(r.Context(), authz)
+	if err != nil {
+		utils.ForwardHttpError(w, err)
+		return
+	}
+
+	response := &ListUserBindingsResponse{
+		Result: bindings,
+	}
+
+	utils.WriteResponse(w, response)
+}
+
+func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, authz *api.Authz) {
+	query, ok := utils.HasSingleQueryParameter(w, r, "page")
+	if !ok {
+		return
+	}
+
+	users, page, err := p.settings.Callbacks.GetUsers(r, []byte(query))
+	if err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	bindings, err := p.rbac.ListUserBindings(r.Context(), authz, users)
+	if err != nil {
+		utils.ForwardHttpError(w, err)
+		return
+	}
+
+	response := &ListUserBindingsResponse{
+		Result: bindings,
+		Page:   page,
+	}
+
+	utils.WriteResponse(w, response)
 }
 
 func (p *proxy) GetUserBinding() *Route {
@@ -168,7 +178,7 @@ func (p *proxy) GetUserBinding() *Route {
 			return
 		}
 
-		user := &v1.User{
+		user := &rbac.User{
 			Id: p.settings.GetUrlVar(r, "id"),
 		}
 
@@ -181,7 +191,7 @@ func (p *proxy) GetUserBinding() *Route {
 
 		binding, err := p.rbac.GetUserBinding(r.Context(), authz, user)
 		if utils.IsHttpError(err, http.StatusNotFound) {
-			binding = &v1.UserBinding{
+			binding = &rbac.UserBinding{
 				Roles: make([]string, 0),
 			}
 		} else if err != nil {
@@ -224,10 +234,10 @@ func (p *proxy) PutUserBinding() *Route {
 			return
 		}
 
-		user := &v1.User{
+		user := &rbac.User{
 			Id: p.settings.GetUrlVar(r, "id"),
 		}
-		binding := &v1.UserBinding{
+		binding := &rbac.UserBinding{
 			Roles: roles,
 		}
 
@@ -266,7 +276,7 @@ func (p *proxy) DeleteUserBinding() *Route {
 			return
 		}
 
-		user := &v1.User{
+		user := &rbac.User{
 			Id: p.settings.GetUrlVar(r, "id"),
 		}
 

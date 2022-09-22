@@ -56,6 +56,12 @@ func TestRbac(t *testing.T) {
 		_ = result
 	}
 
+	if result, err := myRbac.ListUserBindingsAll(ctx, authz); err != nil {
+		t.Error(err)
+	} else {
+		_ = result
+	}
+
 	if result, err := myRbac.ListUserBindings(ctx, authz, users); err != nil {
 		t.Error(err)
 	} else {

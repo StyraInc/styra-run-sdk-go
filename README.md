@@ -188,7 +188,19 @@ if result, err := myRbac.GetRoles(ctx, authz); err != nil {
 
 Note that all RBAC calls are guarded with an authorization check. This is to ensure that the person performing the request has the appropriate permissions to make said request.
 
+### ListUserBindingsAll
+
+This emits _all_ user bindings.
+
+```golang
+if result, err := myRbac.ListUserBindingsAll(ctx, authz); err != nil {
+    log.Fatal(err)
+}
+```
+
 ### ListUserBindings
+
+This emits user bindings for the specified users.
 
 ```golang
 users := []*rbac.User{
@@ -376,7 +388,7 @@ Here, `GetUrlVar` tells the proxy how to extract url parameters. For example, if
 | Callback | Description | Required |
 | --- | --- | --- |
 | `GetAuthz` | This is the same as the client proxy. | yes |
-| `GetUsers` | This callback is used by the `ListUserBindings` proxy. The RBAC implementation does not know how the programmer stores users. Additionally, the proxy must _page users in and out_. This callback controls that behavior. See below for more details. | yes |
+| `GetUsers` | This callback is used by the `ListUserBindings` proxy. It allows the proxy to page users (and hence user bindings) in and out. If omitted, all user bindings are emitted and pagination is ignored. See below for more details. | no |
 | `OnGetUserBinding` | Control whether `GetUserBinding` is allowed. | no |
 | `OnPutUserBinding` | Control whether `PutUserBinding` is allowed. | no |
 | `OnDeleteUserBinding` | Control whether `DeleteUserBinding` is allowed. | no |
@@ -432,6 +444,8 @@ GET /user_bindings?page=3
 ``` 
 
 Here, the input bytes to `GetUsers` is the string `"3"` from the `page=3` query parameter. The output should contain a list of users for that page and an `interface{}` that serves as the value for the `"page"` key in the response. Notice that how the users are paged is ultimately up to the programmer. It's important to note, however, that the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) assumes the above structure so you must follow suit if you want to use it. See `rbac/v1/proxy/callbacks.go` for a concrete example that stores users in an array.
+
+If the programmer does not provide a `GetUsers` callback, the proxy will internally call `ListUserBindingsAll`, emitting _all_ user bindings and ignoring pagination.
 
 ### GetUserBinding
 
