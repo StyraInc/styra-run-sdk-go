@@ -1,17 +1,16 @@
 package proxy
 
+import (
+	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
+)
+
 type GetRolesResponse struct {
 	Result []string `json:"result"`
 }
 
-type ListUserBinding struct {
-	Id    string   `json:"id"`
-	Roles []string `json:"roles"`
-}
-
 type ListUserBindingsResponse struct {
-	Result []*ListUserBinding `json:"result"`
-	Page   interface{}        `json:"page"`
+	Result []*rbac.UserBinding `json:"result"`
+	Page   interface{}         `json:"page"`
 }
 
 type GetUserBindingResponse struct {

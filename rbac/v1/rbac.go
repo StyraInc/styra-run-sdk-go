@@ -24,7 +24,8 @@ type User struct {
 }
 
 type UserBinding struct {
-	Roles []string
+	Id    string   `json:"id"`
+	Roles []string `json:"roles"`
 }
 
 type Settings struct {
@@ -33,6 +34,7 @@ type Settings struct {
 
 type Rbac interface {
 	GetRoles(ctx context.Context, authz *api.Authz) ([]string, error)
+	ListUserBindingsAll(ctx context.Context, authz *api.Authz) ([]*UserBinding, error)
 	ListUserBindings(ctx context.Context, authz *api.Authz, users []*User) ([]*UserBinding, error)
 	GetUserBinding(ctx context.Context, authz *api.Authz, user *User) (*UserBinding, error)
 	PutUserBinding(ctx context.Context, authz *api.Authz, user *User, binding *UserBinding) error
@@ -62,6 +64,31 @@ func (r *rbac) GetRoles(ctx context.Context, authz *api.Authz) ([]string, error)
 	}
 }
 
+func (r *rbac) ListUserBindingsAll(ctx context.Context, authz *api.Authz) ([]*UserBinding, error) {
+	if !r.authz(ctx, authz) {
+		return nil, authzError
+	}
+
+	data := make(map[string][]string)
+	url := fmt.Sprintf(listUserBindingsFormat, authz.Tenant)
+	if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
+		return nil, err
+	}
+
+	result := make([]*UserBinding, 0)
+	for id, roles := range data {
+		result = append(
+			result,
+			&UserBinding{
+				Id:    id,
+				Roles: roles,
+			},
+		)
+	}
+
+	return result, nil
+}
+
 func (r *rbac) ListUserBindings(ctx context.Context, authz *api.Authz, users []*User) ([]*UserBinding, error) {
 	if !r.authz(ctx, authz) {
 		return nil, authzError
@@ -83,6 +110,7 @@ func (r *rbac) ListUserBindings(ctx context.Context, authz *api.Authz, users []*
 		result = append(
 			result,
 			&UserBinding{
+				Id:    user.Id,
 				Roles: roles,
 			},
 		)
@@ -103,6 +131,7 @@ func (r *rbac) GetUserBinding(ctx context.Context, authz *api.Authz, user *User)
 	}
 
 	return &UserBinding{
+		Id:    user.Id,
 		Roles: data,
 	}, nil
 }
