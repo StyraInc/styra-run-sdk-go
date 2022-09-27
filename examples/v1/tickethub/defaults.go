@@ -35,6 +35,12 @@ func DefaultClientProxy(client api.Client) aproxy.Proxy {
 	)
 }
 
+func InstallDefaultClientProxy(router *mux.Router, client api.Client) {
+	proxy := DefaultClientProxy(client).BatchQuery()
+
+	router.HandleFunc("/api/authz", proxy.Handler).Methods(proxy.Method)
+}
+
 func DefaultRbac(client api.Client) rbac.Rbac {
 	return rbac.New(
 		&rbac.Settings{
@@ -57,4 +63,17 @@ func DefaultRbacProxy(client api.Client) rproxy.Proxy {
 			),
 		},
 	)
+}
+
+func InstallDefaultRbacProxy(router *mux.Router, client api.Client) {
+	proxy := DefaultRbacProxy(client)
+	install := func(route *rproxy.Route) {
+		router.HandleFunc("/api/rbac"+route.Path, route.Handler).Methods(route.Method)
+	}
+
+	install(proxy.GetRoles())
+	install(proxy.ListUserBindings())
+	install(proxy.GetUserBinding())
+	install(proxy.PutUserBinding())
+	install(proxy.DeleteUserBinding())
 }
