@@ -86,3 +86,18 @@ func IsHttpError(err error, code int) bool {
 	httpError, ok := err.(HttpError)
 	return ok && httpError.Code() == code
 }
+
+type AuthzError interface {
+	error
+}
+
+type authzError struct {
+}
+
+func NewAuthzError() error {
+	return &authzError{}
+}
+
+func (a *authzError) Error() string {
+	return "forbidden"
+}

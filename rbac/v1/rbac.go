@@ -2,10 +2,10 @@ package v1
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
+	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	authzError = errors.New("permission denied")
+	authzError = utils.NewAuthzError()
 )
 
 type User struct {

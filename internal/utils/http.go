@@ -92,6 +92,8 @@ func ForwardHttpError(w http.ResponseWriter, err error) {
 				http.Error(w, "internal server error", http.StatusInternalServerError)
 			}
 		}
+	} else if _, ok := err.(AuthzError); ok {
+		http.Error(w, "forbidden", http.StatusForbidden)
 	} else {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
