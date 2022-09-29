@@ -10,9 +10,9 @@ import (
 )
 
 type DefaultSettings struct {
-	Client    api.Client
-	GetUrlVar GetUrlVar
-	GetAuthz  api.GetSession
+	Client     api.Client
+	GetUrlVar  GetUrlVar
+	GetSession api.GetSession
 }
 
 func Default(settings *DefaultSettings) Proxy {
@@ -22,7 +22,7 @@ func Default(settings *DefaultSettings) Proxy {
 			GetUrlVar: settings.GetUrlVar,
 			Callbacks: DefaultCallbacks(
 				&DefaultCallbackSettings{
-					GetAuthz: settings.GetAuthz,
+					GetSession: settings.GetSession,
 				},
 			),
 		},
@@ -30,24 +30,24 @@ func Default(settings *DefaultSettings) Proxy {
 }
 
 type DefaultCallbackSettings struct {
-	GetAuthz api.GetSession
+	GetSession api.GetSession
 }
 
 func DefaultCallbacks(settings *DefaultCallbackSettings) *Callbacks {
 	return &Callbacks{
-		GetSession: settings.GetAuthz,
+		GetSession: settings.GetSession,
 	}
 }
 
 type ArrayCallbackSettings struct {
-	GetAuthz api.GetSession
-	Users    []*rbac.User
-	PageSize int
+	GetSession api.GetSession
+	Users      []*rbac.User
+	PageSize   int
 }
 
 func ArrayCallbacks(settings *ArrayCallbackSettings) *Callbacks {
 	return &Callbacks{
-		GetSession:          settings.GetAuthz,
+		GetSession:          settings.GetSession,
 		GetUsers:            NewGetUsers(settings.Users, settings.PageSize),
 		OnGetUserBinding:    NewUserExists(settings.Users),
 		OnPutUserBinding:    NewUserExists(settings.Users),
