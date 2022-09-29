@@ -40,7 +40,7 @@ type OnPutUserBinding func(user *rbac.User) (int, error)
 type OnDeleteUserBinding func(user *rbac.User) (int, error)
 
 type Callbacks struct {
-	GetAuthz            api.GetAuthz
+	GetSession          api.GetSession
 	GetUsers            GetUsers
 	OnGetUserBinding    OnGetUserBinding    // optional
 	OnPutUserBinding    OnPutUserBinding    // optional
@@ -84,13 +84,13 @@ func (p *proxy) GetRoles() *Route {
 			return
 		}
 
-		authz, err := p.settings.Callbacks.GetAuthz(r)
+		session, err := p.settings.Callbacks.GetSession(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
 		}
 
-		roles, err := p.rbac.GetRoles(r.Context(), authz)
+		roles, err := p.rbac.GetRoles(r.Context(), session)
 		if err != nil {
 			utils.ForwardHttpError(w, err)
 			return
@@ -116,16 +116,16 @@ func (p *proxy) ListUserBindings() *Route {
 			return
 		}
 
-		authz, err := p.settings.Callbacks.GetAuthz(r)
+		session, err := p.settings.Callbacks.GetSession(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
 		}
 
 		if p.settings.Callbacks.GetUsers == nil {
-			p.listUserBindingsAll(w, r, authz)
+			p.listUserBindingsAll(w, r, session)
 		} else {
-			p.listUserBindings(w, r, authz)
+			p.listUserBindings(w, r, session)
 		}
 	}
 
@@ -136,8 +136,8 @@ func (p *proxy) ListUserBindings() *Route {
 	}
 }
 
-func (p *proxy) listUserBindingsAll(w http.ResponseWriter, r *http.Request, authz *api.Authz) {
-	bindings, err := p.rbac.ListUserBindingsAll(r.Context(), authz)
+func (p *proxy) listUserBindingsAll(w http.ResponseWriter, r *http.Request, session *api.Session) {
+	bindings, err := p.rbac.ListUserBindingsAll(r.Context(), session)
 	if err != nil {
 		utils.ForwardHttpError(w, err)
 		return
@@ -150,7 +150,7 @@ func (p *proxy) listUserBindingsAll(w http.ResponseWriter, r *http.Request, auth
 	utils.WriteResponse(w, response)
 }
 
-func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, authz *api.Authz) {
+func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, session *api.Session) {
 	query, ok := utils.HasSingleQueryParameter(w, r, "page")
 	if !ok {
 		return
@@ -162,7 +162,7 @@ func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, authz *
 		return
 	}
 
-	bindings, err := p.rbac.ListUserBindings(r.Context(), authz, users)
+	bindings, err := p.rbac.ListUserBindings(r.Context(), session, users)
 	if err != nil {
 		utils.ForwardHttpError(w, err)
 		return
@@ -182,7 +182,7 @@ func (p *proxy) GetUserBinding() *Route {
 			return
 		}
 
-		authz, err := p.settings.Callbacks.GetAuthz(r)
+		session, err := p.settings.Callbacks.GetSession(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
@@ -199,7 +199,7 @@ func (p *proxy) GetUserBinding() *Route {
 			}
 		}
 
-		binding, err := p.rbac.GetUserBinding(r.Context(), authz, user)
+		binding, err := p.rbac.GetUserBinding(r.Context(), session, user)
 		if utils.IsHttpError(err, http.StatusNotFound) {
 			binding = &rbac.UserBinding{
 				Roles: make([]string, 0),
@@ -238,7 +238,7 @@ func (p *proxy) PutUserBinding() *Route {
 			return
 		}
 
-		authz, err := p.settings.Callbacks.GetAuthz(r)
+		session, err := p.settings.Callbacks.GetSession(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
@@ -258,7 +258,7 @@ func (p *proxy) PutUserBinding() *Route {
 			}
 		}
 
-		if err := p.rbac.PutUserBinding(r.Context(), authz, user, binding); err != nil {
+		if err := p.rbac.PutUserBinding(r.Context(), session, user, binding); err != nil {
 			utils.ForwardHttpError(w, err)
 			return
 		}
@@ -280,7 +280,7 @@ func (p *proxy) DeleteUserBinding() *Route {
 			return
 		}
 
-		authz, err := p.settings.Callbacks.GetAuthz(r)
+		session, err := p.settings.Callbacks.GetSession(r)
 		if err != nil {
 			p.authzError(w, err)
 			return
@@ -297,7 +297,7 @@ func (p *proxy) DeleteUserBinding() *Route {
 			}
 		}
 
-		if err := p.rbac.DeleteUserBinding(r.Context(), authz, user); err != nil {
+		if err := p.rbac.DeleteUserBinding(r.Context(), session, user); err != nil {
 			utils.ForwardHttpError(w, err)
 			return
 		}

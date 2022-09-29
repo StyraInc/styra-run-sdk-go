@@ -10,24 +10,24 @@ var (
 	credentialsError = errors.New("could not extract credentials")
 )
 
-type Authz struct {
+type Session struct {
 	Tenant  string `json:"tenant"`
 	Subject string `json:"subject"`
 }
 
-type GetAuthz func(r *http.Request) (*Authz, error)
+type GetSession func(r *http.Request) (*Session, error)
 
-func AuthzFromValues(tenant, subject string) GetAuthz {
-	return func(r *http.Request) (*Authz, error) {
-		return &Authz{
+func SessionFromValues(tenant, subject string) GetSession {
+	return func(r *http.Request) (*Session, error) {
+		return &Session{
 			Tenant:  tenant,
 			Subject: subject,
 		}, nil
 	}
 }
 
-func AuthzFromCookie() GetAuthz {
-	return func(r *http.Request) (*Authz, error) {
+func SessionFromCookie() GetSession {
+	return func(r *http.Request) (*Session, error) {
 		cookie, err := r.Cookie("user")
 		if err != nil {
 			return nil, err
@@ -48,15 +48,15 @@ func AuthzFromCookie() GetAuthz {
 			return nil, credentialsError
 		}
 
-		return &Authz{
+		return &Session{
 			Tenant:  tenant,
 			Subject: subject,
 		}, nil
 	}
 }
 
-func AuthzFromContext() GetAuthz {
-	return func(r *http.Request) (*Authz, error) {
+func SessionFromContext() GetSession {
+	return func(r *http.Request) (*Session, error) {
 		var tenant, subject string
 
 		if value, ok := r.Context().Value("tenant").(string); ok && value != "" {
@@ -71,7 +71,7 @@ func AuthzFromContext() GetAuthz {
 			return nil, credentialsError
 		}
 
-		return &Authz{
+		return &Session{
 			Tenant:  tenant,
 			Subject: subject,
 		}, nil
