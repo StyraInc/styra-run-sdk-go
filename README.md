@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-    myClient := api.New(
+    client := api.New(
         &api.Settings{
             Token:             "",
             Url:               "",
@@ -61,15 +61,11 @@ Once the client has been initialized, you can use it to interact with Styra Run.
 ### GetData
 
 ```golang
-ctx := context.Background()
-
 path := "rbac/user_bindings/acmecorp"
 
 var result interface{}
 
-if err := myClient.GetData(ctx, path, &result); err != nil {
-    log.Fatal(err)
-}
+err := client.GetData(ctx, path, &result)
 ```
 
 The client will automatically serialize and deserialize data to and from Styra Run and `json` tags are fully supported. This is true of all SDK operations. Make sure to pass the `data` parameter by reference if it's not a reference type. 
@@ -77,22 +73,18 @@ The client will automatically serialize and deserialize data to and from Styra R
 ### PutData
 
 ```golang
-data := map[string]interface{}{
-    "alice": []string{"ADMIN"},
-    "bob":   []string{"VIEWER"},
-}
-
-if err := myClient.PutData(ctx, path, data); err != nil {
-    log.Fatal(err)
+err := client.PutData(ctx, path,
+    map[string]interface{}{
+        "alice": []string{"ADMIN"},
+        "bob":   []string{"VIEWER"},
+    },
 }
 ```
 
 ### DeleteData
 
 ```golang
-if err := myClient.DeleteData(ctx, path); err != nil {
-    log.Fatal(err)
-}
+err := client.DeleteData(ctx, path)
 ```
 
 ### Query
@@ -108,9 +100,7 @@ input := map[string]string{
 
 var result interface{}
 
-if err := myClient.Query(ctx, query, input, &result); err != nil {
-    log.Fatal(err)
-}
+err := client.Query(ctx, query, input, &result)
 ```
 
 ### Check
@@ -118,9 +108,7 @@ if err := myClient.Query(ctx, query, input, &result); err != nil {
 The same as `Query`, but returns `true` if the Styra Run response is `{"result": true}` and `false` otherwise.
 
 ```golang
-if result, err := myClient.Check(ctx, query, input); err != nil {
-    log.Fatal(err)
-}
+ok, err := client.Check(ctx, query, input)
 ```
 
 ### BatchQuery
@@ -140,9 +128,7 @@ for i := 0; i < 64; i++ {
     )
 }
 
-if err := myClient.BatchQuery(ctx, queries, nil); err != nil {
-    log.Fatal(err)
-}
+err := client.BatchQuery(ctx, queries, nil)
 ```
 
 ## Initialize RBAC
@@ -156,10 +142,10 @@ import (
 
 func main() {
     // Initialize the client ..
-    
+
     myRbac := rbac.New(
         &rbac.Settings{
-            Client: myClient,
+            Client: client,
         },
     )
 }
@@ -174,16 +160,12 @@ Once RBAC is initialized, you can use it to perform the following operations:
 This allows you to retrieve all available user roles as a list of `string`'s.
 
 ```golang
-ctx := context.Background()
-
-authz := &Authz{
+session := &api.Session{
     Tenant:  "acmecorp",
     Subject: "alice",
 }
 
-if result, err := myRbac.GetRoles(ctx, authz); err != nil {
-    log.Fatal(err)
-}
+result, err := myRbac.GetRoles(ctx, session)
 ```
 
 Note that all RBAC calls are guarded with an authorization check. This is to ensure that the person performing the request has the appropriate permissions to make said request.
@@ -193,9 +175,7 @@ Note that all RBAC calls are guarded with an authorization check. This is to ens
 This emits _all_ user bindings.
 
 ```golang
-if result, err := myRbac.ListUserBindingsAll(ctx, authz); err != nil {
-    log.Fatal(err)
-}
+result, err := myRbac.ListUserBindingsAll(ctx, session)
 ```
 
 ### ListUserBindings
@@ -210,9 +190,7 @@ users := []*rbac.User{
     {Id: "cesar"},
 }
 
-if result, err := myRbac.ListUserBindings(ctx, authz, users); err != nil {
-    log.Fatal(err)
-}
+result, err := myRbac.ListUserBindings(ctx, session, users)
 ```
 
 ### GetUserBinding
@@ -222,9 +200,7 @@ bruce := &rbac.User{
     Id: "bruce",
 }
 
-if result, err := myRbac.GetUserBinding(ctx, authz, bruce); err != nil {
-    log.Fatal(err)
-}
+result, err := myRbac.GetUserBinding(ctx, session, bruce)
 ```
 
 ### PutUserBinding
@@ -234,17 +210,13 @@ binding := &rbac.UserBinding{
     Roles: []string{"OWNER"},
 }
 
-if err := myRbac.PutUserBinding(ctx, authz, bruce, binding); err != nil {
-    log.Fatal(err)
-}
+err := myRbac.PutUserBinding(ctx, session, bruce, binding)
 ```
 
 ### DeleteUserBinding
 
 ```golang
-if err := myRbac.DeleteUserBinding(ctx, authz, bruce); err != nil {
-    log.Fatal(err)
-}
+err := myRbac.DeleteUserBinding(ctx, session, bruce)
 ```
 
 ## Proxies
@@ -278,10 +250,10 @@ func main() {
     
     myProxy := proxy.New(
         &proxy.Settings{
-            Client:    myClient,
+            Client:    client,
             Callbacks: proxy.DefaultCallbacks(
                 &proxy.DefaultCallbackSettings{
-                    GetAuthz: api.AuthzFromValues("acmecorp", "alice"),
+                    GetSession: api.SessionFromValues("acmecorp", "alice"),
                 },
             ),
         },
@@ -293,7 +265,7 @@ Here, `Callbacks` is a struct containing the following functions:
 
 | Callback | Description | Required |
 | --- | --- | --- |
-| `GetAuthz` | Extracts `authz` information from the http request. There are several implementations provided that pull `authz` information from HTTP cookies, the `context`, and so on. You can also implement your own. | yes |
+| `GetSession` | Extracts `session` information from the http request. There are several implementations provided that pull `session` information from HTTP cookies, the `context`, and so on. You can also implement your own. | yes |
 | `OnModifyBatchQueryInput` | Allows the programmer to inject values into each query input field and the global input field. The default implementation automatically injects the tenant and subject. | no |
 
 ## Use the client proxy
@@ -365,15 +337,15 @@ func main() {
 
     myProxy := proxy.New(
         &proxy.Settings{
-            Client:    myClient,
+            Client:    client,
             GetUrlVar: func(r *http.Request, key string) string {
                 return mux.Vars(r)[key]
             },
             Callbacks: proxy.ArrayCallbacks(
                 &proxy.ArrayCallbackSettings{
-                    GetAuthz: api.AuthzFromValues("acmecorp", "alice"),
-                    Users:    users,
-                    PageSize: 2,
+                    GetSession: api.SessionFromValues("acmecorp", "alice"),
+                    Users:      users,
+                    PageSize:   2,
                 },
             ),
         },
@@ -387,7 +359,7 @@ Here, `GetUrlVar` tells the proxy how to extract url parameters. For example, if
 
 | Callback | Description | Required |
 | --- | --- | --- |
-| `GetAuthz` | This is the same as the client proxy. | yes |
+| `GetSession` | This is the same as the client proxy. | yes |
 | `GetUsers` | This callback is used by the `ListUserBindings` proxy. It allows the proxy to page users (and hence user bindings) in and out. If omitted, all user bindings are emitted and pagination is ignored. See below for more details. | no |
 | `OnGetUserBinding` | Control whether `GetUserBinding` is allowed. | no |
 | `OnPutUserBinding` | Control whether `PutUserBinding` is allowed. | no |

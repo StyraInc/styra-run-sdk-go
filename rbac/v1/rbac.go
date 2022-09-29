@@ -33,12 +33,12 @@ type Settings struct {
 }
 
 type Rbac interface {
-	GetRoles(ctx context.Context, authz *api.Authz) ([]string, error)
-	ListUserBindingsAll(ctx context.Context, authz *api.Authz) ([]*UserBinding, error)
-	ListUserBindings(ctx context.Context, authz *api.Authz, users []*User) ([]*UserBinding, error)
-	GetUserBinding(ctx context.Context, authz *api.Authz, user *User) (*UserBinding, error)
-	PutUserBinding(ctx context.Context, authz *api.Authz, user *User, binding *UserBinding) error
-	DeleteUserBinding(ctx context.Context, authz *api.Authz, user *User) error
+	GetRoles(ctx context.Context, session *api.Session) ([]string, error)
+	ListUserBindingsAll(ctx context.Context, session *api.Session) ([]*UserBinding, error)
+	ListUserBindings(ctx context.Context, session *api.Session, users []*User) ([]*UserBinding, error)
+	GetUserBinding(ctx context.Context, session *api.Session, user *User) (*UserBinding, error)
+	PutUserBinding(ctx context.Context, session *api.Session, user *User, binding *UserBinding) error
+	DeleteUserBinding(ctx context.Context, session *api.Session, user *User) error
 }
 
 type rbac struct {
@@ -51,8 +51,8 @@ func New(settings *Settings) Rbac {
 	}
 }
 
-func (r *rbac) GetRoles(ctx context.Context, authz *api.Authz) ([]string, error) {
-	if !r.authz(ctx, authz) {
+func (r *rbac) GetRoles(ctx context.Context, session *api.Session) ([]string, error) {
+	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
 
@@ -64,13 +64,13 @@ func (r *rbac) GetRoles(ctx context.Context, authz *api.Authz) ([]string, error)
 	}
 }
 
-func (r *rbac) ListUserBindingsAll(ctx context.Context, authz *api.Authz) ([]*UserBinding, error) {
-	if !r.authz(ctx, authz) {
+func (r *rbac) ListUserBindingsAll(ctx context.Context, session *api.Session) ([]*UserBinding, error) {
+	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
 
 	data := make(map[string][]string)
-	url := fmt.Sprintf(listUserBindingsFormat, authz.Tenant)
+	url := fmt.Sprintf(listUserBindingsFormat, session.Tenant)
 	if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
 		return nil, err
 	}
@@ -89,13 +89,13 @@ func (r *rbac) ListUserBindingsAll(ctx context.Context, authz *api.Authz) ([]*Us
 	return result, nil
 }
 
-func (r *rbac) ListUserBindings(ctx context.Context, authz *api.Authz, users []*User) ([]*UserBinding, error) {
-	if !r.authz(ctx, authz) {
+func (r *rbac) ListUserBindings(ctx context.Context, session *api.Session, users []*User) ([]*UserBinding, error) {
+	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
 
 	data := make(map[string][]string)
-	url := fmt.Sprintf(listUserBindingsFormat, authz.Tenant)
+	url := fmt.Sprintf(listUserBindingsFormat, session.Tenant)
 	if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
 		return nil, err
 	}
@@ -119,13 +119,13 @@ func (r *rbac) ListUserBindings(ctx context.Context, authz *api.Authz, users []*
 	return result, nil
 }
 
-func (r *rbac) GetUserBinding(ctx context.Context, authz *api.Authz, user *User) (*UserBinding, error) {
-	if !r.authz(ctx, authz) {
+func (r *rbac) GetUserBinding(ctx context.Context, session *api.Session, user *User) (*UserBinding, error) {
+	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
 
 	data := make([]string, 0)
-	url := fmt.Sprintf(userBindingFormat, authz.Tenant, user.Id)
+	url := fmt.Sprintf(userBindingFormat, session.Tenant, user.Id)
 	if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
 		return nil, err
 	}
@@ -136,26 +136,26 @@ func (r *rbac) GetUserBinding(ctx context.Context, authz *api.Authz, user *User)
 	}, nil
 }
 
-func (r *rbac) PutUserBinding(ctx context.Context, authz *api.Authz, user *User, binding *UserBinding) error {
-	if !r.authz(ctx, authz) {
+func (r *rbac) PutUserBinding(ctx context.Context, session *api.Session, user *User, binding *UserBinding) error {
+	if !r.authz(ctx, session) {
 		return authzError
 	}
 
-	url := fmt.Sprintf(userBindingFormat, authz.Tenant, user.Id)
+	url := fmt.Sprintf(userBindingFormat, session.Tenant, user.Id)
 	return r.settings.Client.PutData(ctx, url, binding.Roles)
 }
 
-func (r *rbac) DeleteUserBinding(ctx context.Context, authz *api.Authz, user *User) error {
-	if !r.authz(ctx, authz) {
+func (r *rbac) DeleteUserBinding(ctx context.Context, session *api.Session, user *User) error {
+	if !r.authz(ctx, session) {
 		return authzError
 	}
 
-	url := fmt.Sprintf(userBindingFormat, authz.Tenant, user.Id)
+	url := fmt.Sprintf(userBindingFormat, session.Tenant, user.Id)
 	return r.settings.Client.DeleteData(ctx, url)
 }
 
-func (r *rbac) authz(ctx context.Context, authz *api.Authz) bool {
-	if result, err := r.settings.Client.Check(ctx, authzPath, authz); err != nil {
+func (r *rbac) authz(ctx context.Context, session *api.Session) bool {
+	if result, err := r.settings.Client.Check(ctx, authzPath, session); err != nil {
 		return false
 	} else {
 		return result

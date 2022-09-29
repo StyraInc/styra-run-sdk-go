@@ -45,24 +45,24 @@ func TestRbac(t *testing.T) {
 		},
 	)
 
-	authz := &api.Authz{
+	session := &api.Session{
 		Tenant:  tenant,
 		Subject: subject,
 	}
 
-	if result, err := myRbac.GetRoles(ctx, authz); err != nil {
+	if result, err := myRbac.GetRoles(ctx, session); err != nil {
 		t.Error(err)
 	} else {
 		_ = result
 	}
 
-	if result, err := myRbac.ListUserBindingsAll(ctx, authz); err != nil {
+	if result, err := myRbac.ListUserBindingsAll(ctx, session); err != nil {
 		t.Error(err)
 	} else {
 		_ = result
 	}
 
-	if result, err := myRbac.ListUserBindings(ctx, authz, users); err != nil {
+	if result, err := myRbac.ListUserBindings(ctx, session, users); err != nil {
 		t.Error(err)
 	} else {
 		_ = result
@@ -72,7 +72,7 @@ func TestRbac(t *testing.T) {
 		Id: "cesar",
 	}
 
-	if result, err := myRbac.GetUserBinding(ctx, authz, bruce); err != nil {
+	if result, err := myRbac.GetUserBinding(ctx, session, bruce); err != nil {
 		t.Error(err)
 	} else {
 		_ = result
@@ -82,11 +82,11 @@ func TestRbac(t *testing.T) {
 		Roles: []string{"OWNER"},
 	}
 
-	if err := myRbac.PutUserBinding(ctx, authz, bruce, binding); err != nil {
+	if err := myRbac.PutUserBinding(ctx, session, bruce, binding); err != nil {
 		t.Error(err)
 	}
 
-	if err := myRbac.DeleteUserBinding(ctx, authz, bruce); err != nil {
+	if err := myRbac.DeleteUserBinding(ctx, session, bruce); err != nil {
 		t.Error(err)
 	}
 }

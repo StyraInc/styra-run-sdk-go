@@ -60,12 +60,12 @@ func main() {
 			Client: client,
 			ClientCallbacks: aproxy.DefaultCallbacks(
 				&aproxy.DefaultCallbackSettings{
-					GetAuthz: api.AuthzFromValues(tenant, subject),
+					GetSession: api.SessionFromValues(tenant, subject),
 				},
 			),
 			RbacCallbacks: rproxy.ArrayCallbacks(
 				&rproxy.ArrayCallbackSettings{
-					GetAuthz: api.AuthzFromValues(tenant, subject),
+					GetAuthz: api.SessionFromValues(tenant, subject),
 					Users:    users,
 					PageSize: 3,
 				},

@@ -12,7 +12,7 @@ import (
 type DefaultSettings struct {
 	Client    api.Client
 	GetUrlVar GetUrlVar
-	GetAuthz  api.GetAuthz
+	GetAuthz  api.GetSession
 }
 
 func Default(settings *DefaultSettings) Proxy {
@@ -30,24 +30,24 @@ func Default(settings *DefaultSettings) Proxy {
 }
 
 type DefaultCallbackSettings struct {
-	GetAuthz api.GetAuthz
+	GetAuthz api.GetSession
 }
 
 func DefaultCallbacks(settings *DefaultCallbackSettings) *Callbacks {
 	return &Callbacks{
-		GetAuthz: settings.GetAuthz,
+		GetSession: settings.GetAuthz,
 	}
 }
 
 type ArrayCallbackSettings struct {
-	GetAuthz api.GetAuthz
+	GetAuthz api.GetSession
 	Users    []*rbac.User
 	PageSize int
 }
 
 func ArrayCallbacks(settings *ArrayCallbackSettings) *Callbacks {
 	return &Callbacks{
-		GetAuthz:            settings.GetAuthz,
+		GetSession:          settings.GetAuthz,
 		GetUsers:            NewGetUsers(settings.Users, settings.PageSize),
 		OnGetUserBinding:    NewUserExists(settings.Users),
 		OnPutUserBinding:    NewUserExists(settings.Users),

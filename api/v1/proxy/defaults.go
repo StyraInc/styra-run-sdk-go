@@ -5,8 +5,8 @@ import (
 )
 
 type DefaultSettings struct {
-	Client   api.Client
-	GetAuthz api.GetAuthz
+	Client     api.Client
+	GetSession api.GetSession
 }
 
 func Default(settings *DefaultSettings) Proxy {
@@ -15,7 +15,7 @@ func Default(settings *DefaultSettings) Proxy {
 			Client: settings.Client,
 			Callbacks: DefaultCallbacks(
 				&DefaultCallbackSettings{
-					GetAuthz: settings.GetAuthz,
+					GetSession: settings.GetSession,
 				},
 			),
 		},
@@ -23,25 +23,25 @@ func Default(settings *DefaultSettings) Proxy {
 }
 
 type DefaultCallbackSettings struct {
-	GetAuthz api.GetAuthz
+	GetSession api.GetSession
 }
 
 func DefaultCallbacks(settings *DefaultCallbackSettings) *Callbacks {
 	return &Callbacks{
-		GetAuthz:                settings.GetAuthz,
+		GetSession:              settings.GetSession,
 		OnModifyBatchQueryInput: NewOnModifyBatchQueryInput(),
 	}
 }
 
 func NewOnModifyBatchQueryInput() OnModifyBatchQueryInput {
-	return func(authz *api.Authz, input interface{}) interface{} {
+	return func(session *api.Session, input interface{}) interface{} {
 		if input == nil {
 			input = make(map[string]interface{})
 		}
 
 		if values, ok := input.(map[string]interface{}); ok {
-			values["tenant"] = authz.Tenant
-			values["subject"] = authz.Subject
+			values["tenant"] = session.Tenant
+			values["subject"] = session.Subject
 		}
 
 		return input

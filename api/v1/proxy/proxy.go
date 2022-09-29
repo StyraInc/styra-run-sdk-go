@@ -22,10 +22,10 @@ type Route struct {
 	Handler http.HandlerFunc
 }
 
-type OnModifyBatchQueryInput func(authz *api.Authz, input interface{}) interface{}
+type OnModifyBatchQueryInput func(session *api.Session, input interface{}) interface{}
 
 type Callbacks struct {
-	GetAuthz                api.GetAuthz
+	GetSession              api.GetSession
 	OnModifyBatchQueryInput OnModifyBatchQueryInput
 }
 
@@ -78,16 +78,16 @@ func (p *proxy) BatchQuery() *Route {
 
 		// Allow the user to modify inputs.
 		if p.settings.Callbacks.OnModifyBatchQueryInput != nil {
-			authz, err := p.settings.Callbacks.GetAuthz(r)
+			session, err := p.settings.Callbacks.GetSession(r)
 			if err != nil {
 				p.authzError(w, err)
 				return
 			}
 
-			request.Input = p.settings.Callbacks.OnModifyBatchQueryInput(authz, request.Input)
+			request.Input = p.settings.Callbacks.OnModifyBatchQueryInput(session, request.Input)
 
 			for _, query := range queries {
-				query.Input = p.settings.Callbacks.OnModifyBatchQueryInput(authz, query.Input)
+				query.Input = p.settings.Callbacks.OnModifyBatchQueryInput(session, query.Input)
 			}
 		}
 
