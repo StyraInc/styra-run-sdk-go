@@ -8,10 +8,19 @@ import (
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
 )
 
+type RouteType uint
+
 const (
 	proxyGetRolesPath         = "/roles"
 	proxyListUserBindingsPath = "/user_bindings"
 	proxyUserBindingsFormat   = "/user_bindings/{id}"
+
+	// The route types.
+	GetRoles RouteType = iota
+	ListUserBindings
+	GetUserBinding
+	PutUserBinding
+	DeleteUserBinding
 )
 
 type Route struct {
@@ -50,6 +59,7 @@ type Proxy interface {
 	GetUserBinding() *Route
 	PutUserBinding() *Route
 	DeleteUserBinding() *Route
+	All() map[RouteType]*Route
 }
 
 type proxy struct {
@@ -300,6 +310,16 @@ func (p *proxy) DeleteUserBinding() *Route {
 		Path:    proxyUserBindingsFormat,
 		Method:  http.MethodDelete,
 		Handler: handler,
+	}
+}
+
+func (p *proxy) All() map[RouteType]*Route {
+	return map[RouteType]*Route{
+		GetRoles:          p.GetRoles(),
+		ListUserBindings:  p.ListUserBindings(),
+		GetUserBinding:    p.GetUserBinding(),
+		PutUserBinding:    p.PutUserBinding(),
+		DeleteUserBinding: p.DeleteUserBinding(),
 	}
 }
 

@@ -47,26 +47,22 @@ func main() {
 		return
 	}
 
-	myClient := api.New(
-		&api.Settings{
-			Token:             *token,
-			Url:               *url,
-			DiscoveryStrategy: api.Simple,
-			MaxRetries:        maxRetries,
+	client := api.Default(
+		&api.DefaultSettings{
+			Token: *token,
+			Url:   *url,
 		},
 	)
 
 	ws := server.NewWebServer(
 		&server.WebServerSettings{
-			Port:         1337,
-			Client:       myClient,
-			ClientPrefix: "",
+			Port:   1337,
+			Client: client,
 			ClientCallbacks: aproxy.DefaultCallbacks(
 				&aproxy.DefaultCallbackSettings{
 					GetAuthz: api.AuthzFromValues(tenant, subject),
 				},
 			),
-			RbacPrefix: "",
 			RbacCallbacks: rproxy.ArrayCallbacks(
 				&rproxy.ArrayCallbackSettings{
 					GetAuthz: api.AuthzFromValues(tenant, subject),

@@ -9,6 +9,26 @@ import (
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
 )
 
+type DefaultSettings struct {
+	Client    api.Client
+	GetUrlVar GetUrlVar
+	GetAuthz  api.GetAuthz
+}
+
+func Default(settings *DefaultSettings) Proxy {
+	return New(
+		&Settings{
+			Client:    settings.Client,
+			GetUrlVar: settings.GetUrlVar,
+			Callbacks: DefaultCallbacks(
+				&DefaultCallbackSettings{
+					GetAuthz: settings.GetAuthz,
+				},
+			),
+		},
+	)
+}
+
 type DefaultCallbackSettings struct {
 	GetAuthz api.GetAuthz
 }

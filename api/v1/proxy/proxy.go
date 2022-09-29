@@ -7,8 +7,13 @@ import (
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 )
 
+type RouteType uint
+
 const (
 	proxyBatchQueryPath = "/"
+
+	// The route types.
+	BatchQuery RouteType = iota
 )
 
 type Route struct {
@@ -31,6 +36,7 @@ type Settings struct {
 
 type Proxy interface {
 	BatchQuery() *Route
+	All() map[RouteType]*Route
 }
 
 type proxy struct {
@@ -112,6 +118,12 @@ func (p *proxy) BatchQuery() *Route {
 		Path:    proxyBatchQueryPath,
 		Method:  http.MethodPost,
 		Handler: handler,
+	}
+}
+
+func (p *proxy) All() map[RouteType]*Route {
+	return map[RouteType]*Route{
+		BatchQuery: p.BatchQuery(),
 	}
 }
 

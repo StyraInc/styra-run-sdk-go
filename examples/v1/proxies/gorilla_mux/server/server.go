@@ -14,9 +14,7 @@ import (
 type WebServerSettings struct {
 	Port            int
 	Client          api.Client
-	ClientPrefix    string
 	ClientCallbacks *aproxy.Callbacks
-	RbacPrefix      string
 	RbacCallbacks   *rproxy.Callbacks
 }
 
@@ -46,7 +44,9 @@ func (w *webServer) Listen() error {
 			},
 		)
 
-		w.InstallClient(proxy, w.settings.ClientPrefix, router)
+		for _, route := range proxy.All() {
+			router.HandleFunc(route.Path, route.Handler).Methods(route.Method)
+		}
 	}
 
 	// Rbac handlers.
@@ -61,30 +61,12 @@ func (w *webServer) Listen() error {
 			},
 		)
 
-		w.InstallRbac(proxy, w.settings.RbacPrefix, router)
+		for _, route := range proxy.All() {
+			router.HandleFunc(route.Path, route.Handler).Methods(route.Method)
+		}
 	}
 
 	port := fmt.Sprintf(":%d", w.settings.Port)
 
 	return http.ListenAndServe(port, router)
-}
-
-func (w *webServer) InstallClient(proxy aproxy.Proxy, prefix string, router *mux.Router) {
-	install := func(route *aproxy.Route) {
-		router.HandleFunc(prefix+route.Path, route.Handler).Methods(route.Method)
-	}
-
-	install(proxy.BatchQuery())
-}
-
-func (w *webServer) InstallRbac(proxy rproxy.Proxy, prefix string, router *mux.Router) {
-	install := func(route *rproxy.Route) {
-		router.HandleFunc(prefix+route.Path, route.Handler).Methods(route.Method)
-	}
-
-	install(proxy.GetRoles())
-	install(proxy.ListUserBindings())
-	install(proxy.GetUserBinding())
-	install(proxy.PutUserBinding())
-	install(proxy.DeleteUserBinding())
 }
