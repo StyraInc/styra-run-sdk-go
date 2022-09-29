@@ -4,6 +4,24 @@ import (
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 )
 
+type DefaultSettings struct {
+	Client   api.Client
+	GetAuthz api.GetAuthz
+}
+
+func Default(settings *DefaultSettings) Proxy {
+	return New(
+		&Settings{
+			Client: settings.Client,
+			Callbacks: DefaultCallbacks(
+				&DefaultCallbackSettings{
+					GetAuthz: settings.GetAuthz,
+				},
+			),
+		},
+	)
+}
+
 type DefaultCallbackSettings struct {
 	GetAuthz api.GetAuthz
 }
