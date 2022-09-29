@@ -65,9 +65,9 @@ func main() {
 			),
 			RbacCallbacks: rproxy.ArrayCallbacks(
 				&rproxy.ArrayCallbackSettings{
-					GetAuthz: api.SessionFromValues(tenant, subject),
-					Users:    users,
-					PageSize: 3,
+					GetSession: api.SessionFromValues(tenant, subject),
+					Users:      users,
+					PageSize:   3,
 				},
 			),
 		},
