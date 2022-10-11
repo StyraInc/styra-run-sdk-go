@@ -270,7 +270,16 @@ Here, `Callbacks` is a struct containing the following functions:
 
 ## Use the client proxy
 
-The proxy emits routes that have the following shape:
+The following routes are available on the proxy:
+
+```golang
+type Proxy interface {
+    BatchQuery() *Route
+    All() map[RouteType]*Route
+}
+```
+
+The routes have the following shape:
 
 ### BatchQuery
 
@@ -366,6 +375,21 @@ Here, `GetUrlVar` tells the proxy how to extract url parameters. For example, if
 | `OnDeleteUserBinding` | Control whether `DeleteUserBinding` is allowed. | no |
 
 ## Use the RBAC proxy
+
+The following routes are available on the proxy:
+
+```golang
+type Proxy interface {
+    GetRoles() *Route
+    ListUserBindings() *Route
+    GetUserBinding() *Route
+    PutUserBinding() *Route
+    DeleteUserBinding() *Route
+    All() map[RouteType]*Route
+}
+```
+
+The routes have the following shape:
 
 ### GetRoles 
 
