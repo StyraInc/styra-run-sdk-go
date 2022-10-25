@@ -11,11 +11,6 @@ import (
 	rproxy "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
 )
 
-const (
-	tenant  = "acmecorp"
-	subject = "alice"
-)
-
 var (
 	users = []*rbac.User{
 		{Id: "alice"},
@@ -38,10 +33,11 @@ var (
 func main() {
 	token := flag.String("token", "", "token")
 	url := flag.String("url", "", "url")
+	port := flag.Int("port", 0, "port")
 
 	flag.Parse()
 
-	if *token == "" || *url == "" {
+	if *token == "" || *url == "" || *port == 0 {
 		flag.PrintDefaults()
 		return
 	}
@@ -55,16 +51,16 @@ func main() {
 
 	ws := server.NewWebServer(
 		&server.WebServerSettings{
-			Port:   1337,
+			Port:   *port,
 			Client: client,
 			ClientCallbacks: aproxy.DefaultCallbacks(
 				&aproxy.DefaultCallbackSettings{
-					GetSession: api.SessionFromValues(tenant, subject),
+					GetSession: api.SessionFromCookie(),
 				},
 			),
 			RbacCallbacks: rproxy.ArrayCallbacks(
 				&rproxy.ArrayCallbackSettings{
-					GetSession: api.SessionFromValues(tenant, subject),
+					GetSession: api.SessionFromCookie(),
 					Users:      users,
 					PageSize:   3,
 				},
