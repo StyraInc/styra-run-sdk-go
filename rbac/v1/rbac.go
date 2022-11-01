@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
@@ -85,6 +86,10 @@ func (r *rbac) ListUserBindingsAll(ctx context.Context, session *api.Session) ([
 			},
 		)
 	}
+
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Id < result[j].Id
+	})
 
 	return result, nil
 }
