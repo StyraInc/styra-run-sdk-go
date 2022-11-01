@@ -38,6 +38,7 @@ var (
 func main() {
 	token := flag.String("token", "", "token")
 	url := flag.String("url", "", "url")
+	port := flag.Int("port", 3000, "port")
 
 	flag.Parse()
 
@@ -55,7 +56,7 @@ func main() {
 
 	ws := server.NewWebServer(
 		&server.WebServerSettings{
-			Port:   1337,
+			Port:   *port,
 			Client: client,
 			ClientCallbacks: aproxy.DefaultCallbacks(
 				&aproxy.DefaultCallbackSettings{

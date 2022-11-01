@@ -10,7 +10,7 @@ type GetRolesResponse struct {
 
 type ListUserBindingsResponse struct {
 	Result []*rbac.UserBinding `json:"result"`
-	Page   interface{}         `json:"page"`
+	Page   interface{}         `json:"page,omitempty"`
 }
 
 type GetUserBindingResponse struct {
