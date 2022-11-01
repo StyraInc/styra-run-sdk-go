@@ -86,8 +86,8 @@ func (p *proxy) BatchQuery() *Route {
 
 			request.Input = p.settings.Callbacks.OnModifyBatchQueryInput(session, request.Input)
 
-			for _, query := range queries {
-				query.Input = p.settings.Callbacks.OnModifyBatchQueryInput(session, query.Input)
+			for i := range queries {
+				queries[i].Input = p.settings.Callbacks.OnModifyBatchQueryInput(session, queries[i].Input)
 			}
 		}
 

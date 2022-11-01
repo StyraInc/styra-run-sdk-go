@@ -7,28 +7,25 @@ import (
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	aproxy "github.com/styrainc/styra-run-sdk-go/api/v1/proxy"
 	"github.com/styrainc/styra-run-sdk-go/examples/v1/proxies/gorilla_mux/server"
-	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
 	rproxy "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
 )
 
-var (
-	users = []*rbac.User{
-		{Id: "alice"},
-		{Id: "bob"},
-		{Id: "bryan"},
-		{Id: "cesar"},
-		{Id: "emily"},
-		{Id: "gary"},
-		{Id: "henry"},
-		{Id: "kevin"},
-		{Id: "lynn"},
-		{Id: "jiri"},
-		{Id: "larry"},
-		{Id: "alan"},
-		{Id: "terence"},
-		{Id: "eckhart"},
-	}
-)
+// var (
+// 	users = []*rbac.User{
+// 		{Id: "alice"},
+// 		{Id: "bob"},
+// 		{Id: "bryan"},
+// 		{Id: "cesar"},
+// 		{Id: "emily"},
+// 		{Id: "gary"},
+// 		{Id: "henry"},
+// 		{Id: "kevin"},
+// 		{Id: "lynn"},
+// 		{Id: "jiri"},
+// 		{Id: "larry"},
+// 		{Id: "alan"},
+// 	}
+// )
 
 func main() {
 	token := flag.String("token", "", "token")
@@ -58,13 +55,16 @@ func main() {
 					GetSession: api.SessionFromCookie(),
 				},
 			),
-			RbacCallbacks: rproxy.ArrayCallbacks(
-				&rproxy.ArrayCallbackSettings{
-					GetSession: api.SessionFromCookie(),
-					Users:      users,
-					PageSize:   3,
-				},
-			),
+			RbacCallbacks: &rproxy.Callbacks{
+				GetSession: api.SessionFromCookie(),
+			},
+			// RbacCallbacks: rproxy.ArrayCallbacks(
+			// 	&rproxy.ArrayCallbackSettings{
+			// 		GetSession: api.SessionFromCookie(),
+			// 		Users:      users,
+			// 		PageSize:   3,
+			// 	},
+			// ),
 		},
 	)
 

@@ -35,15 +35,13 @@ func DefaultCallbacks(settings *DefaultCallbackSettings) *Callbacks {
 
 func NewOnModifyBatchQueryInput() OnModifyBatchQueryInput {
 	return func(session *api.Session, input interface{}) interface{} {
-		if input == nil {
-			input = make(map[string]interface{})
+		if input != nil {
+			return input
 		}
 
-		if values, ok := input.(map[string]interface{}); ok {
-			values["tenant"] = session.Tenant
-			values["subject"] = session.Subject
+		return map[string]string{
+			"tenant":  session.Tenant,
+			"subject": session.Subject,
 		}
-
-		return input
 	}
 }
