@@ -73,6 +73,7 @@ func (w *webServer) Listen() error {
 		)
 
 		install(proxy.GetRoles(), "/roles")
+		install(proxy.ListAllUserBindings(), "/all_user_bindings")
 		install(proxy.ListUserBindings(), "/user_bindings")
 		install(proxy.GetUserBinding(key("id")), "/user_bindings/{id}")
 		install(proxy.PutUserBinding(key("id")), "/user_bindings/{id}")

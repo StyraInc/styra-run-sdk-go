@@ -32,6 +32,7 @@ type Settings struct {
 
 type Proxy interface {
 	GetRoles() *types.Route
+	ListAllUserBindings() *types.Route
 	ListUserBindings() *types.Route
 	GetUserBinding(getId types.GetVar) *types.Route
 	PutUserBinding(getId types.GetVar) *types.Route
@@ -85,6 +86,37 @@ func (p *proxy) GetRoles() *types.Route {
 	}
 }
 
+func (p *proxy) ListAllUserBindings() *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodGet) {
+			return
+		}
+
+		session, err := p.settings.Callbacks.GetSession(r)
+		if err != nil {
+			p.authzError(w, err)
+			return
+		}
+
+		bindings, err := p.rbac.ListUserBindingsAll(r.Context(), session)
+		if err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &ListUserBindingsResponse{
+			Result: bindings,
+		}
+
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodGet,
+		Handler: handler,
+	}
+}
+
 func (p *proxy) ListUserBindings() *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodGet) {
@@ -97,57 +129,35 @@ func (p *proxy) ListUserBindings() *types.Route {
 			return
 		}
 
-		if p.settings.Callbacks.GetUsers == nil {
-			p.listUserBindingsAll(w, r, session)
-		} else {
-			p.listUserBindings(w, r, session)
+		query, ok := utils.HasSingleQueryParameter(w, r, "page")
+		if !ok {
+			return
 		}
+
+		users, page, err := p.settings.Callbacks.GetUsers(r, []byte(query))
+		if err != nil {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		bindings, err := p.rbac.ListUserBindings(r.Context(), session, users)
+		if err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &ListUserBindingsResponse{
+			Result: bindings,
+			Page:   page,
+		}
+
+		utils.WriteResponse(w, response)
 	}
 
 	return &types.Route{
 		Method:  http.MethodGet,
 		Handler: handler,
 	}
-}
-
-func (p *proxy) listUserBindingsAll(w http.ResponseWriter, r *http.Request, session *api.Session) {
-	bindings, err := p.rbac.ListUserBindingsAll(r.Context(), session)
-	if err != nil {
-		utils.ForwardHttpError(w, err)
-		return
-	}
-
-	response := &ListUserBindingsResponse{
-		Result: bindings,
-	}
-
-	utils.WriteResponse(w, response)
-}
-
-func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, session *api.Session) {
-	query, ok := utils.HasSingleQueryParameter(w, r, "page")
-	if !ok {
-		return
-	}
-
-	users, page, err := p.settings.Callbacks.GetUsers(r, []byte(query))
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	bindings, err := p.rbac.ListUserBindings(r.Context(), session, users)
-	if err != nil {
-		utils.ForwardHttpError(w, err)
-		return
-	}
-
-	response := &ListUserBindingsResponse{
-		Result: bindings,
-		Page:   page,
-	}
-
-	utils.WriteResponse(w, response)
 }
 
 func (p *proxy) GetUserBinding(getId types.GetVar) *types.Route {
