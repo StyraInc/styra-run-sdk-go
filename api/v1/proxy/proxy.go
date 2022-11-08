@@ -5,22 +5,8 @@ import (
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
+	"github.com/styrainc/styra-run-sdk-go/types"
 )
-
-type RouteType uint
-
-const (
-	proxyBatchQueryPath = "/"
-
-	// The route types.
-	BatchQuery RouteType = iota
-)
-
-type Route struct {
-	Path    string
-	Method  string
-	Handler http.HandlerFunc
-}
 
 type OnModifyBatchQueryInput func(session *api.Session, input interface{}) interface{}
 
@@ -35,8 +21,12 @@ type Settings struct {
 }
 
 type Proxy interface {
-	BatchQuery() *Route
-	All() map[RouteType]*Route
+	GetData(getPath types.GetVar) *types.Route
+	PutData(getPath types.GetVar) *types.Route
+	DeleteData(getPath types.GetVar) *types.Route
+	Query(getPath types.GetVar) *types.Route
+	Check(getPath types.GetVar) *types.Route
+	BatchQuery() *types.Route
 }
 
 type proxy struct {
@@ -49,13 +39,167 @@ func New(settings *Settings) Proxy {
 	}
 }
 
-func (p *proxy) BatchQuery() *Route {
+func (p *proxy) GetData(getPath types.GetVar) *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodGet) {
+			return
+		}
+
+		path := getPath(r)
+
+		var data interface{}
+		if err := p.settings.Client.GetData(r.Context(), path, &data); err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &GetDataResponse{
+			Result: data,
+		}
+
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodGet,
+		Handler: handler,
+	}
+}
+
+func (p *proxy) PutData(getPath types.GetVar) *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodPut) {
+			return
+		}
+
+		if !utils.HasContentType(w, r, utils.ApplicationJson) {
+			return
+		}
+
+		var data interface{}
+		if !utils.ReadRequest(w, r, &data) {
+			return
+		}
+
+		path := getPath(r)
+
+		if err := p.settings.Client.PutData(r.Context(), path, data); err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &PutDataResponse{}
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodPut,
+		Handler: handler,
+	}
+}
+
+func (p *proxy) DeleteData(getPath types.GetVar) *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodDelete) {
+			return
+		}
+
+		path := getPath(r)
+
+		if err := p.settings.Client.DeleteData(r.Context(), path); err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &DeleteDataResponse{}
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodDelete,
+		Handler: handler,
+	}
+}
+
+func (p *proxy) Query(getPath types.GetVar) *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodPost) {
 			return
 		}
 
-		if !utils.HasContentType(w, r, "application/json") {
+		if !utils.HasContentType(w, r, utils.ApplicationJson) {
+			return
+		}
+
+		request := &QueryRequest{}
+		if !utils.ReadRequest(w, r, &request) {
+			return
+		}
+
+		path := getPath(r)
+
+		var data interface{}
+		if err := p.settings.Client.Query(r.Context(), path, request.Input, &data); err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &QueryResponse{
+			Result: data,
+		}
+
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodPost,
+		Handler: handler,
+	}
+}
+
+func (p *proxy) Check(getPath types.GetVar) *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodPost) {
+			return
+		}
+
+		if !utils.HasContentType(w, r, utils.ApplicationJson) {
+			return
+		}
+
+		request := &CheckRequest{}
+		if !utils.ReadRequest(w, r, &request) {
+			return
+		}
+
+		path := getPath(r)
+
+		result, err := p.settings.Client.Check(r.Context(), path, request.Input)
+		if err != nil {
+			utils.ForwardHttpError(w, err)
+			return
+		}
+
+		response := &CheckResponse{
+			Result: result,
+		}
+
+		utils.WriteResponse(w, response)
+	}
+
+	return &types.Route{
+		Method:  http.MethodPost,
+		Handler: handler,
+	}
+}
+
+func (p *proxy) BatchQuery() *types.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !utils.HasMethod(w, r, http.MethodPost) {
+			return
+		}
+
+		if !utils.HasContentType(w, r, utils.ApplicationJson) {
 			return
 		}
 
@@ -114,16 +258,9 @@ func (p *proxy) BatchQuery() *Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &Route{
-		Path:    proxyBatchQueryPath,
+	return &types.Route{
 		Method:  http.MethodPost,
 		Handler: handler,
-	}
-}
-
-func (p *proxy) All() map[RouteType]*Route {
-	return map[RouteType]*Route{
-		BatchQuery: p.BatchQuery(),
 	}
 }
 

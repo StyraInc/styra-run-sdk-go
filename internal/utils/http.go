@@ -5,7 +5,26 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 )
+
+const (
+	ApplicationJson = "application/json"
+)
+
+func JoinPath(base string, paths ...string) (string, error) {
+	u, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+
+	for _, p := range paths {
+		u.Path = path.Join(u.Path, p)
+	}
+
+	return u.String(), nil
+}
 
 func HasMethod(w http.ResponseWriter, r *http.Request, method string) bool {
 	if r.Method != method {
@@ -69,7 +88,7 @@ func WriteResponse(w http.ResponseWriter, response interface{}) bool {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return false
 	} else {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", ApplicationJson)
 
 		if _, err := w.Write(bytes); err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -85,7 +104,7 @@ func ForwardHttpError(w http.ResponseWriter, err error) {
 		if bytes, err := json.Marshal(httpError.Details()); err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Type", ApplicationJson)
 			w.WriteHeader(httpError.Code())
 
 			if _, err := w.Write(bytes); err != nil {
