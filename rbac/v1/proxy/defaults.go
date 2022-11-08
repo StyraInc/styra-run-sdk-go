@@ -11,15 +11,13 @@ import (
 
 type DefaultSettings struct {
 	Client     api.Client
-	GetUrlVar  GetUrlVar
 	GetSession api.GetSession
 }
 
 func Default(settings *DefaultSettings) Proxy {
 	return New(
 		&Settings{
-			Client:    settings.Client,
-			GetUrlVar: settings.GetUrlVar,
+			Client: settings.Client,
 			Callbacks: DefaultCallbacks(
 				&DefaultCallbackSettings{
 					GetSession: settings.GetSession,

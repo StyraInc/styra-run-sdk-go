@@ -6,30 +6,8 @@ import (
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
+	"github.com/styrainc/styra-run-sdk-go/types"
 )
-
-type RouteType uint
-
-const (
-	proxyGetRolesPath         = "/roles"
-	proxyListUserBindingsPath = "/user_bindings"
-	proxyUserBindingsFormat   = "/user_bindings/{id}"
-
-	// The route types.
-	GetRoles RouteType = iota
-	ListUserBindings
-	GetUserBinding
-	PutUserBinding
-	DeleteUserBinding
-)
-
-type Route struct {
-	Path    string
-	Method  string
-	Handler http.HandlerFunc
-}
-
-type GetUrlVar func(r *http.Request, key string) string
 
 type GetUsers func(r *http.Request, bytes []byte) ([]*rbac.User, interface{}, error)
 
@@ -49,17 +27,15 @@ type Callbacks struct {
 
 type Settings struct {
 	Client    api.Client
-	GetUrlVar GetUrlVar
 	Callbacks *Callbacks
 }
 
 type Proxy interface {
-	GetRoles() *Route
-	ListUserBindings() *Route
-	GetUserBinding() *Route
-	PutUserBinding() *Route
-	DeleteUserBinding() *Route
-	All() map[RouteType]*Route
+	GetRoles() *types.Route
+	ListUserBindings() *types.Route
+	GetUserBinding(getId types.GetVar) *types.Route
+	PutUserBinding(getId types.GetVar) *types.Route
+	DeleteUserBinding(getId types.GetVar) *types.Route
 }
 
 type proxy struct {
@@ -78,7 +54,7 @@ func New(settings *Settings) Proxy {
 	}
 }
 
-func (p *proxy) GetRoles() *Route {
+func (p *proxy) GetRoles() *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodGet) {
 			return
@@ -103,14 +79,13 @@ func (p *proxy) GetRoles() *Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &Route{
-		Path:    proxyGetRolesPath,
+	return &types.Route{
 		Method:  http.MethodGet,
 		Handler: handler,
 	}
 }
 
-func (p *proxy) ListUserBindings() *Route {
+func (p *proxy) ListUserBindings() *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodGet) {
 			return
@@ -129,8 +104,7 @@ func (p *proxy) ListUserBindings() *Route {
 		}
 	}
 
-	return &Route{
-		Path:    proxyListUserBindingsPath,
+	return &types.Route{
 		Method:  http.MethodGet,
 		Handler: handler,
 	}
@@ -176,7 +150,7 @@ func (p *proxy) listUserBindings(w http.ResponseWriter, r *http.Request, session
 	utils.WriteResponse(w, response)
 }
 
-func (p *proxy) GetUserBinding() *Route {
+func (p *proxy) GetUserBinding(getId types.GetVar) *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodGet) {
 			return
@@ -189,7 +163,7 @@ func (p *proxy) GetUserBinding() *Route {
 		}
 
 		user := &rbac.User{
-			Id: p.settings.GetUrlVar(r, "id"),
+			Id: getId(r),
 		}
 
 		if p.settings.Callbacks.OnGetUserBinding != nil {
@@ -216,20 +190,19 @@ func (p *proxy) GetUserBinding() *Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &Route{
-		Path:    proxyUserBindingsFormat,
+	return &types.Route{
 		Method:  http.MethodGet,
 		Handler: handler,
 	}
 }
 
-func (p *proxy) PutUserBinding() *Route {
+func (p *proxy) PutUserBinding(getId types.GetVar) *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodPut) {
 			return
 		}
 
-		if !utils.HasContentType(w, r, "application/json") {
+		if !utils.HasContentType(w, r, utils.ApplicationJson) {
 			return
 		}
 
@@ -245,7 +218,7 @@ func (p *proxy) PutUserBinding() *Route {
 		}
 
 		user := &rbac.User{
-			Id: p.settings.GetUrlVar(r, "id"),
+			Id: getId(r),
 		}
 		binding := &rbac.UserBinding{
 			Roles: roles,
@@ -267,14 +240,13 @@ func (p *proxy) PutUserBinding() *Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &Route{
-		Path:    proxyUserBindingsFormat,
+	return &types.Route{
 		Method:  http.MethodPut,
 		Handler: handler,
 	}
 }
 
-func (p *proxy) DeleteUserBinding() *Route {
+func (p *proxy) DeleteUserBinding(getId types.GetVar) *types.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodDelete) {
 			return
@@ -287,7 +259,7 @@ func (p *proxy) DeleteUserBinding() *Route {
 		}
 
 		user := &rbac.User{
-			Id: p.settings.GetUrlVar(r, "id"),
+			Id: getId(r),
 		}
 
 		if p.settings.Callbacks.OnDeleteUserBinding != nil {
@@ -306,20 +278,9 @@ func (p *proxy) DeleteUserBinding() *Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &Route{
-		Path:    proxyUserBindingsFormat,
+	return &types.Route{
 		Method:  http.MethodDelete,
 		Handler: handler,
-	}
-}
-
-func (p *proxy) All() map[RouteType]*Route {
-	return map[RouteType]*Route{
-		GetRoles:          p.GetRoles(),
-		ListUserBindings:  p.ListUserBindings(),
-		GetUserBinding:    p.GetUserBinding(),
-		PutUserBinding:    p.PutUserBinding(),
-		DeleteUserBinding: p.DeleteUserBinding(),
 	}
 }
 

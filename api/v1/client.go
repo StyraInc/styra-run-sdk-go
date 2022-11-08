@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	dataPlaneUrlFormat      = "%s/data/%s"
-	dataPlaneBatchUrlFormat = "%s/data_batch"
-	batchLimit              = 20
+	dataPlanePath      = "/data"
+	dataPlaneBatchPath = "/data_batch"
+	batchLimit         = 20
 )
 
 type DiscoveryStrategy uint
@@ -88,8 +88,13 @@ func (c *client) getData(ctx context.Context, url, path string, result interface
 		Result: result,
 	}
 
+	url, err := utils.JoinPath(url, dataPlanePath, path)
+	if err != nil {
+		return err
+	}
+
 	rest := &utils.Rest{
-		Url:     fmt.Sprintf(dataPlaneUrlFormat, url, path),
+		Url:     url,
 		Method:  http.MethodGet,
 		Client:  c.settings.Client,
 		Headers: c.bearer(),
@@ -112,8 +117,13 @@ func (c *client) PutData(ctx context.Context, path string, data interface{}) err
 }
 
 func (c *client) putData(ctx context.Context, url, path string, data interface{}) error {
+	url, err := utils.JoinPath(url, dataPlanePath, path)
+	if err != nil {
+		return err
+	}
+
 	rest := &utils.Rest{
-		Url:     fmt.Sprintf(dataPlaneUrlFormat, url, path),
+		Url:     url,
 		Method:  http.MethodPut,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
@@ -137,8 +147,13 @@ func (c *client) DeleteData(ctx context.Context, path string) error {
 }
 
 func (c *client) deleteData(ctx context.Context, url, path string) error {
+	url, err := utils.JoinPath(url, dataPlanePath, path)
+	if err != nil {
+		return err
+	}
+
 	rest := &utils.Rest{
-		Url:     fmt.Sprintf(dataPlaneUrlFormat, url, path),
+		Url:     url,
 		Method:  http.MethodDelete,
 		Client:  c.settings.Client,
 		Headers: c.bearer(),
@@ -172,8 +187,13 @@ func (c *client) query(ctx context.Context, url, path string, input, result inte
 		Result: result,
 	}
 
+	url, err := utils.JoinPath(url, dataPlanePath, path)
+	if err != nil {
+		return err
+	}
+
 	rest := &utils.Rest{
-		Url:     fmt.Sprintf(dataPlaneUrlFormat, url, path),
+		Url:     url,
 		Method:  http.MethodPost,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
@@ -262,8 +282,13 @@ func (c *client) doBatchQuery(ctx context.Context, url string, queries []Query, 
 		} `json:"result"`
 	}{}
 
+	url, err := utils.JoinPath(url, dataPlaneBatchPath)
+	if err != nil {
+		return err
+	}
+
 	rest := &utils.Rest{
-		Url:     fmt.Sprintf(dataPlaneBatchUrlFormat, url),
+		Url:     url,
 		Method:  http.MethodPost,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
@@ -292,6 +317,6 @@ func (c *client) bearer() map[string]string {
 func (c *client) bearerAndJson() map[string]string {
 	return map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", c.settings.Token),
-		"Content-Type":  "application/json",
+		"Content-Type":  utils.ApplicationJson,
 	}
 }
