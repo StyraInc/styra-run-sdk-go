@@ -49,7 +49,7 @@ func New(settings *Settings) *types.Route {
 				return
 			}
 
-			request.Input = settings.OnModifyInput(session, request.Input)
+			request.Input = settings.OnModifyInput(session, path, request.Input)
 		}
 
 		var data interface{}

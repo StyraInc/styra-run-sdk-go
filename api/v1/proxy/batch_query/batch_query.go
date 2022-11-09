@@ -68,10 +68,10 @@ func New(settings *Settings) *types.Route {
 				return
 			}
 
-			request.Input = settings.OnModifyInput(session, request.Input)
+			request.Input = settings.OnModifyInput(session, "", request.Input)
 
 			for i := range queries {
-				queries[i].Input = settings.OnModifyInput(session, queries[i].Input)
+				queries[i].Input = settings.OnModifyInput(session, queries[i].Path, queries[i].Input)
 			}
 		}
 
