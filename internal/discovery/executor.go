@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	errors2 "github.com/styrainc/styra-run-sdk-go/internal/errors"
+	rerrors "github.com/styrainc/styra-run-sdk-go/internal/errors"
 	"github.com/styrainc/styra-run-sdk-go/internal/rest"
 )
 
@@ -87,7 +87,7 @@ func (e *executor) Try(ctx context.Context, request Request) error {
 
 		if err = request(gateway); err == nil {
 			return nil
-		} else if httpError, ok := err.(errors2.HttpError); !ok {
+		} else if httpError, ok := err.(rerrors.HttpError); !ok {
 			return err
 		} else if _, ok := badGatewayCodes[httpError.Code()]; !ok {
 			return err
@@ -151,7 +151,7 @@ func (e *executor) gateways(ctx context.Context) ([]*Gateway, error) {
 		Method:  http.MethodGet,
 		Client:  e.settings.Client,
 		Headers: e.bearer(),
-		Decoder: errors2.HttpErrorDecoder(response),
+		Decoder: rerrors.HttpErrorDecoder(response),
 	}
 	if err := rest.Execute(ctx); err != nil {
 		return nil, err
