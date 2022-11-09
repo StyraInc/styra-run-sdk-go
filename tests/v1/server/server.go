@@ -66,6 +66,30 @@ func (w *webServer) Listen() error {
 		}
 	}
 
+	// Get data.
+	//install(get_data.New(
+	//	&get_data.Settings{
+	//		Client:  w.settings.Client,
+	//		GetPath: key("path"),
+	//	}), "/data/{path:.*}",
+	//)
+	//
+	//// Put data.
+	//install(put_data.New(
+	//	&put_data.Settings{
+	//		Client:  w.settings.Client,
+	//		GetPath: key("path"),
+	//	}), "/data/{path:.*}",
+	//)
+	//
+	//// Delete data.
+	//install(delete_data.New(
+	//	&delete_data.Settings{
+	//		Client:  w.settings.Client,
+	//		GetPath: key("path"),
+	//	}), "/data/{path:.*}",
+	//)
+
 	port := fmt.Sprintf(":%d", w.settings.Port)
 
 	return http.ListenAndServe(port, router)
