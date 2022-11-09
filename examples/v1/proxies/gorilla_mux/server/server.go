@@ -110,7 +110,7 @@ func (w *webServer) Listen() error {
 			&batch_query.Settings{
 				Client:        w.settings.Client,
 				GetSession:    getSession,
-				OnModifyInput: shared.NewOnModifyInput(),
+				OnModifyInput: shared.DefaultOnModifyInput(),
 			}), "/batch_query",
 		)
 	}
