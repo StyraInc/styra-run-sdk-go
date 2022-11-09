@@ -28,6 +28,14 @@ func JoinPath(base string, paths ...string) (string, error) {
 	return u.String(), nil
 }
 
+func InternalServerError(w http.ResponseWriter) {
+	http.Error(w, "internal server error", http.StatusInternalServerError)
+}
+
+func AuthzError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), http.StatusBadRequest)
+}
+
 func HasMethod(w http.ResponseWriter, r *http.Request, method string) bool {
 	if r.Method != method {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -87,13 +95,13 @@ func ReadRequest(w http.ResponseWriter, r *http.Request, request interface{}) bo
 
 func WriteResponse(w http.ResponseWriter, response interface{}) bool {
 	if bytes, err := json.Marshal(response); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		InternalServerError(w)
 		return false
 	} else {
 		w.Header().Set("Content-Type", ApplicationJson)
 
 		if _, err := w.Write(bytes); err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			InternalServerError(w)
 			return false
 		}
 	}
@@ -104,22 +112,18 @@ func WriteResponse(w http.ResponseWriter, response interface{}) bool {
 func ForwardHttpError(w http.ResponseWriter, err error) {
 	if httpError, ok := err.(errors.HttpError); ok && httpError.Details() != nil {
 		if bytes, err := json.Marshal(httpError.Details()); err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			InternalServerError(w)
 		} else {
 			w.Header().Set("Content-Type", ApplicationJson)
 			w.WriteHeader(httpError.Code())
 
 			if _, err := w.Write(bytes); err != nil {
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				InternalServerError(w)
 			}
 		}
 	} else if _, ok := err.(errors.AuthzError); ok {
 		http.Error(w, "forbidden", http.StatusForbidden)
 	} else {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		InternalServerError(w)
 	}
-}
-
-func AuthzError(w http.ResponseWriter, err error) {
-	http.Error(w, err.Error(), http.StatusBadRequest)
 }

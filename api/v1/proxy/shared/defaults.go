@@ -2,7 +2,7 @@ package shared
 
 import api "github.com/styrainc/styra-run-sdk-go/api/v1"
 
-func NewOnModifyInput() OnModifyInput {
+func DefaultOnModifyInput() OnModifyInput {
 	return func(session *api.Session, path string, input interface{}) interface{} {
 		if input == nil {
 			input = make(map[string]interface{})

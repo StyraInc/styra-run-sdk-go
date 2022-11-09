@@ -6,6 +6,7 @@ import (
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
+	"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/shared"
 	"github.com/styrainc/styra-run-sdk-go/types"
 )
 
@@ -14,12 +15,10 @@ type ListUserBindingsResponse struct {
 	Page   interface{}         `json:"page,omitempty"`
 }
 
-type GetUsers func(r *http.Request, bytes []byte) ([]*rbac.User, interface{}, error)
-
 type Settings struct {
 	Rbac       rbac.Rbac
 	GetSession api.GetSession
-	GetUsers   GetUsers
+	GetUsers   shared.GetUsers
 }
 
 func New(settings *Settings) *types.Route {
@@ -41,7 +40,7 @@ func New(settings *Settings) *types.Route {
 
 		users, page, err := settings.GetUsers(r, []byte(query))
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			utils.InternalServerError(w)
 			return
 		}
 
