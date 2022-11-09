@@ -20,7 +20,7 @@ type QueryResponse struct {
 type Settings struct {
 	Client        api.Client
 	GetPath       types.GetVar
-	GetSession    api.GetSession
+	GetSession    types.GetSession
 	OnModifyInput shared.OnModifyInput
 }
 

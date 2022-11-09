@@ -61,7 +61,7 @@ func (w *webServer) Listen() error {
 		router.HandleFunc(path, route.Handler).Methods(route.Method)
 	}
 
-	getSession := api.SessionFromValues(tenant, subject)
+	getSession := types.SessionFromValues(tenant, subject)
 
 	// Client handlers.
 	{
