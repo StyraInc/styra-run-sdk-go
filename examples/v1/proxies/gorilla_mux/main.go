@@ -5,15 +5,8 @@ import (
 	"log"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
-	aproxy "github.com/styrainc/styra-run-sdk-go/api/v1/proxy"
 	"github.com/styrainc/styra-run-sdk-go/examples/v1/proxies/gorilla_mux/server"
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
-	rproxy "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
-)
-
-const (
-	tenant  = "acmecorp"
-	subject = "alice"
 )
 
 var (
@@ -58,18 +51,13 @@ func main() {
 		&server.WebServerSettings{
 			Port:   *port,
 			Client: client,
-			ClientCallbacks: aproxy.DefaultCallbacks(
-				&aproxy.DefaultCallbackSettings{
-					GetSession: api.SessionFromValues(tenant, subject),
-				},
-			),
-			RbacCallbacks: rproxy.ArrayCallbacks(
-				&rproxy.ArrayCallbackSettings{
-					GetSession: api.SessionFromValues(tenant, subject),
-					Users:      users,
-					PageSize:   3,
-				},
-			),
+			//RbacCallbacks: rproxy.ArrayCallbacks(
+			//	&rproxy.ArrayCallbackSettings{
+			//		GetSession: api.SessionFromValues(tenant, subject),
+			//		Users:      users,
+			//		PageSize:   3,
+			//	},
+			//),
 		},
 	)
 

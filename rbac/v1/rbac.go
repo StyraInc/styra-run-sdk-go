@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
-	"github.com/styrainc/styra-run-sdk-go/internal/utils"
+	"github.com/styrainc/styra-run-sdk-go/internal/errors"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	authzError = utils.NewAuthzError()
+	authzError = errors.NewAuthzError()
 )
 
 type User struct {
