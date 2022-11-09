@@ -29,7 +29,7 @@ type BatchQueryResponse struct {
 
 type Settings struct {
 	Client        api.Client
-	GetSession    api.GetSession
+	GetSession    types.GetSession
 	OnModifyInput shared.OnModifyInput
 }
 

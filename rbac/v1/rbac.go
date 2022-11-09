@@ -7,6 +7,7 @@ import (
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/errors"
+	"github.com/styrainc/styra-run-sdk-go/types"
 )
 
 const (
@@ -34,12 +35,12 @@ type Settings struct {
 }
 
 type Rbac interface {
-	GetRoles(ctx context.Context, session *api.Session) ([]string, error)
-	ListUserBindingsAll(ctx context.Context, session *api.Session) ([]*UserBinding, error)
-	ListUserBindings(ctx context.Context, session *api.Session, users []*User) ([]*UserBinding, error)
-	GetUserBinding(ctx context.Context, session *api.Session, user *User) (*UserBinding, error)
-	PutUserBinding(ctx context.Context, session *api.Session, user *User, binding *UserBinding) error
-	DeleteUserBinding(ctx context.Context, session *api.Session, user *User) error
+	GetRoles(ctx context.Context, session *types.Session) ([]string, error)
+	ListUserBindingsAll(ctx context.Context, session *types.Session) ([]*UserBinding, error)
+	ListUserBindings(ctx context.Context, session *types.Session, users []*User) ([]*UserBinding, error)
+	GetUserBinding(ctx context.Context, session *types.Session, user *User) (*UserBinding, error)
+	PutUserBinding(ctx context.Context, session *types.Session, user *User, binding *UserBinding) error
+	DeleteUserBinding(ctx context.Context, session *types.Session, user *User) error
 }
 
 type rbac struct {
@@ -52,7 +53,7 @@ func New(settings *Settings) Rbac {
 	}
 }
 
-func (r *rbac) GetRoles(ctx context.Context, session *api.Session) ([]string, error) {
+func (r *rbac) GetRoles(ctx context.Context, session *types.Session) ([]string, error) {
 	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
@@ -65,7 +66,7 @@ func (r *rbac) GetRoles(ctx context.Context, session *api.Session) ([]string, er
 	}
 }
 
-func (r *rbac) ListUserBindingsAll(ctx context.Context, session *api.Session) ([]*UserBinding, error) {
+func (r *rbac) ListUserBindingsAll(ctx context.Context, session *types.Session) ([]*UserBinding, error) {
 	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
@@ -94,7 +95,7 @@ func (r *rbac) ListUserBindingsAll(ctx context.Context, session *api.Session) ([
 	return result, nil
 }
 
-func (r *rbac) ListUserBindings(ctx context.Context, session *api.Session, users []*User) ([]*UserBinding, error) {
+func (r *rbac) ListUserBindings(ctx context.Context, session *types.Session, users []*User) ([]*UserBinding, error) {
 	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
@@ -124,7 +125,7 @@ func (r *rbac) ListUserBindings(ctx context.Context, session *api.Session, users
 	return result, nil
 }
 
-func (r *rbac) GetUserBinding(ctx context.Context, session *api.Session, user *User) (*UserBinding, error) {
+func (r *rbac) GetUserBinding(ctx context.Context, session *types.Session, user *User) (*UserBinding, error) {
 	if !r.authz(ctx, session) {
 		return nil, authzError
 	}
@@ -141,7 +142,7 @@ func (r *rbac) GetUserBinding(ctx context.Context, session *api.Session, user *U
 	}, nil
 }
 
-func (r *rbac) PutUserBinding(ctx context.Context, session *api.Session, user *User, binding *UserBinding) error {
+func (r *rbac) PutUserBinding(ctx context.Context, session *types.Session, user *User, binding *UserBinding) error {
 	if !r.authz(ctx, session) {
 		return authzError
 	}
@@ -150,7 +151,7 @@ func (r *rbac) PutUserBinding(ctx context.Context, session *api.Session, user *U
 	return r.settings.Client.PutData(ctx, url, binding.Roles)
 }
 
-func (r *rbac) DeleteUserBinding(ctx context.Context, session *api.Session, user *User) error {
+func (r *rbac) DeleteUserBinding(ctx context.Context, session *types.Session, user *User) error {
 	if !r.authz(ctx, session) {
 		return authzError
 	}
@@ -159,7 +160,7 @@ func (r *rbac) DeleteUserBinding(ctx context.Context, session *api.Session, user
 	return r.settings.Client.DeleteData(ctx, url)
 }
 
-func (r *rbac) authz(ctx context.Context, session *api.Session) bool {
+func (r *rbac) authz(ctx context.Context, session *types.Session) bool {
 	if result, err := r.settings.Client.Check(ctx, authzPath, session); err != nil {
 		return false
 	} else {

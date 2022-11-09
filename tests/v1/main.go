@@ -8,6 +8,7 @@ import (
 	aproxy "github.com/styrainc/styra-run-sdk-go/api/v1/proxy"
 	"github.com/styrainc/styra-run-sdk-go/examples/v1/proxies/gorilla_mux/server"
 	rproxy "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
+	"github.com/styrainc/styra-run-sdk-go/types"
 )
 
 // var (
@@ -52,11 +53,11 @@ func main() {
 			Client: client,
 			ClientCallbacks: aproxy.DefaultCallbacks(
 				&aproxy.DefaultCallbackSettings{
-					GetSession: api.SessionFromCookie(),
+					GetSession: types.SessionFromCookie(),
 				},
 			),
 			RbacCallbacks: &rproxy.Callbacks{
-				GetSession: api.SessionFromCookie(),
+				GetSession: types.SessionFromCookie(),
 			},
 			// RbacCallbacks: rproxy.ArrayCallbacks(
 			// 	&rproxy.ArrayCallbackSettings{

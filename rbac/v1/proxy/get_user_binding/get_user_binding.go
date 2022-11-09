@@ -3,7 +3,6 @@ package get_user_binding
 import (
 	"net/http"
 
-	api "github.com/styrainc/styra-run-sdk-go/api/v1"
 	"github.com/styrainc/styra-run-sdk-go/internal/errors"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 	rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
@@ -17,7 +16,7 @@ type GetUserBindingResponse struct {
 
 type Settings struct {
 	Rbac           rbac.Rbac
-	GetSession     api.GetSession
+	GetSession     types.GetSession
 	GetId          types.GetVar
 	OnBeforeAccess shared.OnBeforeAccess
 }
