@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/styrainc/styra-run-sdk-go/internal/discovery"
+	"github.com/styrainc/styra-run-sdk-go/internal/errors"
+	"github.com/styrainc/styra-run-sdk-go/internal/rest"
 	"github.com/styrainc/styra-run-sdk-go/internal/utils"
 )
 
@@ -32,7 +34,7 @@ type Query struct {
 	Path   string
 	Input  interface{}
 	Result interface{}
-	Error  *utils.ErrorResponse
+	Error  *errors.ErrorResponse
 }
 
 type Settings struct {
@@ -93,12 +95,12 @@ func (c *client) getData(ctx context.Context, url, path string, result interface
 		return err
 	}
 
-	rest := &utils.Rest{
+	rest := &rest.Rest{
 		Url:     url,
 		Method:  http.MethodGet,
 		Client:  c.settings.Client,
 		Headers: c.bearer(),
-		Decoder: utils.HttpErrorDecoder(response),
+		Decoder: errors.HttpErrorDecoder(response),
 	}
 	if err := rest.Execute(ctx); err != nil {
 		return err
@@ -122,12 +124,12 @@ func (c *client) putData(ctx context.Context, url, path string, data interface{}
 		return err
 	}
 
-	rest := &utils.Rest{
+	rest := &rest.Rest{
 		Url:     url,
 		Method:  http.MethodPut,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
-		Encoder: utils.JsonEncoder(data),
+		Encoder: rest.JsonEncoder(data),
 	}
 
 	if err := rest.Execute(ctx); err != nil {
@@ -152,7 +154,7 @@ func (c *client) deleteData(ctx context.Context, url, path string) error {
 		return err
 	}
 
-	rest := &utils.Rest{
+	rest := &rest.Rest{
 		Url:     url,
 		Method:  http.MethodDelete,
 		Client:  c.settings.Client,
@@ -192,13 +194,13 @@ func (c *client) query(ctx context.Context, url, path string, input, result inte
 		return err
 	}
 
-	rest := &utils.Rest{
+	rest := &rest.Rest{
 		Url:     url,
 		Method:  http.MethodPost,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
-		Encoder: utils.JsonEncoder(request),
-		Decoder: utils.HttpErrorDecoder(response),
+		Encoder: rest.JsonEncoder(request),
+		Decoder: errors.HttpErrorDecoder(response),
 	}
 
 	if err := rest.Execute(ctx); err != nil {
@@ -277,8 +279,8 @@ func (c *client) doBatchQuery(ctx context.Context, url string, queries []Query, 
 
 	response := &struct {
 		Result []struct {
-			Result interface{}          `json:"result"`
-			Error  *utils.ErrorResponse `json:"error"`
+			Result interface{}           `json:"result"`
+			Error  *errors.ErrorResponse `json:"error"`
 		} `json:"result"`
 	}{}
 
@@ -287,13 +289,13 @@ func (c *client) doBatchQuery(ctx context.Context, url string, queries []Query, 
 		return err
 	}
 
-	rest := &utils.Rest{
+	rest := &rest.Rest{
 		Url:     url,
 		Method:  http.MethodPost,
 		Client:  c.settings.Client,
 		Headers: c.bearerAndJson(),
-		Encoder: utils.JsonEncoder(request),
-		Decoder: utils.HttpErrorDecoder(response),
+		Encoder: rest.JsonEncoder(request),
+		Decoder: errors.HttpErrorDecoder(response),
 	}
 
 	if err := rest.Execute(ctx); err != nil {

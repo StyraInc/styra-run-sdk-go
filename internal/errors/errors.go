@@ -1,10 +1,12 @@
-package utils
+package errors
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/styrainc/styra-run-sdk-go/internal/rest"
 )
 
 type ErrorResponse struct {
@@ -62,7 +64,7 @@ func (h *httpError) Error() string {
 	return h.message
 }
 
-func HttpErrorDecoder(value interface{}) Decoder {
+func HttpErrorDecoder(value interface{}) rest.Decoder {
 	return func(code int, bytes []byte) error {
 		if code >= http.StatusOK && code <= http.StatusIMUsed {
 			if err := json.Unmarshal(bytes, value); err != nil {

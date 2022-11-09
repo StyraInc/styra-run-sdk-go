@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/styrainc/styra-run-sdk-go/internal/errors"
 )
 
 const (
@@ -100,7 +102,7 @@ func WriteResponse(w http.ResponseWriter, response interface{}) bool {
 }
 
 func ForwardHttpError(w http.ResponseWriter, err error) {
-	if httpError, ok := err.(HttpError); ok && httpError.Details() != nil {
+	if httpError, ok := err.(errors.HttpError); ok && httpError.Details() != nil {
 		if bytes, err := json.Marshal(httpError.Details()); err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		} else {
@@ -111,9 +113,13 @@ func ForwardHttpError(w http.ResponseWriter, err error) {
 				http.Error(w, "internal server error", http.StatusInternalServerError)
 			}
 		}
-	} else if _, ok := err.(AuthzError); ok {
+	} else if _, ok := err.(errors.AuthzError); ok {
 		http.Error(w, "forbidden", http.StatusForbidden)
 	} else {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
+}
+
+func AuthzError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), http.StatusBadRequest)
 }
