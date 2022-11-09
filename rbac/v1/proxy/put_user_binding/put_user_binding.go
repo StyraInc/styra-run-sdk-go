@@ -15,10 +15,10 @@ type PutUserBindingRequest []string
 type PutUserBindingResponse struct{}
 
 type Settings struct {
-	Rbac       rbac.Rbac
-	GetSession api.GetSession
-	GetId      types.GetVar
-	OnTouched  shared.OnUserBindingTouched
+	Rbac           rbac.Rbac
+	GetSession     api.GetSession
+	GetId          types.GetVar
+	OnBeforeAccess shared.OnBeforeAccess
 }
 
 func New(settings *Settings) *types.Route {
@@ -50,8 +50,8 @@ func New(settings *Settings) *types.Route {
 			Roles: roles,
 		}
 
-		if settings.OnTouched != nil {
-			if code, err := settings.OnTouched(user); err != nil {
+		if settings.OnBeforeAccess != nil {
+			if code, err := settings.OnBeforeAccess(user); err != nil {
 				http.Error(w, err.Error(), code)
 				return
 			}
