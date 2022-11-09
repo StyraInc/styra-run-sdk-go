@@ -40,10 +40,12 @@ func main() {
 		return
 	}
 
-	client := api.Default(
-		&api.DefaultSettings{
-			Token: *token,
-			Url:   *url,
+	client := api.New(
+		&api.Settings{
+			Token:             *token,
+			Url:               *url,
+			DiscoveryStrategy: api.Simple,
+			MaxRetries:        3,
 		},
 	)
 
