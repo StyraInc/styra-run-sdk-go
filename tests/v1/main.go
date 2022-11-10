@@ -5,28 +5,8 @@ import (
 	"log"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
-	aproxy "github.com/styrainc/styra-run-sdk-go/api/v1/proxy"
-	"github.com/styrainc/styra-run-sdk-go/examples/v1/proxies/gorilla_mux/server"
-	rproxy "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
-	"github.com/styrainc/styra-run-sdk-go/types"
+	"github.com/styrainc/styra-run-sdk-go/tests/v1/server"
 )
-
-// var (
-// 	users = []*rbac.User{
-// 		{Id: "alice"},
-// 		{Id: "bob"},
-// 		{Id: "bryan"},
-// 		{Id: "cesar"},
-// 		{Id: "emily"},
-// 		{Id: "gary"},
-// 		{Id: "henry"},
-// 		{Id: "kevin"},
-// 		{Id: "lynn"},
-// 		{Id: "jiri"},
-// 		{Id: "larry"},
-// 		{Id: "alan"},
-// 	}
-// )
 
 func main() {
 	token := flag.String("token", "", "token")
@@ -40,10 +20,12 @@ func main() {
 		return
 	}
 
-	client := api.Default(
-		&api.DefaultSettings{
-			Token: *token,
-			Url:   *url,
+	client := api.New(
+		&api.Settings{
+			Token:             *token,
+			Url:               *url,
+			DiscoveryStrategy: api.Simple,
+			MaxRetries:        3,
 		},
 	)
 
@@ -51,21 +33,6 @@ func main() {
 		&server.WebServerSettings{
 			Port:   *port,
 			Client: client,
-			ClientCallbacks: aproxy.DefaultCallbacks(
-				&aproxy.DefaultCallbackSettings{
-					GetSession: types.SessionFromCookie(),
-				},
-			),
-			RbacCallbacks: &rproxy.Callbacks{
-				GetSession: types.SessionFromCookie(),
-			},
-			// RbacCallbacks: rproxy.ArrayCallbacks(
-			// 	&rproxy.ArrayCallbackSettings{
-			// 		GetSession: api.SessionFromCookie(),
-			// 		Users:      users,
-			// 		PageSize:   3,
-			// 	},
-			// ),
 		},
 	)
 
