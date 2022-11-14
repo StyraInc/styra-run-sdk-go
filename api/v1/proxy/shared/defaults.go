@@ -5,7 +5,7 @@ import (
 )
 
 func DefaultOnModifyInput() OnModifyInput {
-	return func(session *api.Session, path string, input interface{}) interface{} {
+	return func(session *api.Session, path string, input interface{}) (interface{}, error) {
 		if input == nil {
 			input = make(map[string]interface{})
 		}
@@ -15,6 +15,6 @@ func DefaultOnModifyInput() OnModifyInput {
 			values["subject"] = session.Subject
 		}
 
-		return input
+		return input, nil
 	}
 }

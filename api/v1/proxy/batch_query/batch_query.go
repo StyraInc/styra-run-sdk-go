@@ -68,10 +68,20 @@ func New(settings *Settings) *types.Route {
 				return
 			}
 
-			request.Input = settings.OnModifyInput(session, "", request.Input)
+			if input, err := settings.OnModifyInput(session, "", request.Input); err != nil {
+				utils.InternalServerError(w)
+				return
+			} else {
+				request.Input = input
+			}
 
 			for i := range queries {
-				queries[i].Input = settings.OnModifyInput(session, queries[i].Path, queries[i].Input)
+				if input, err := settings.OnModifyInput(session, queries[i].Path, queries[i].Input); err != nil {
+					utils.InternalServerError(w)
+					return
+				} else {
+					queries[i].Input = input
+				}
 			}
 		}
 
