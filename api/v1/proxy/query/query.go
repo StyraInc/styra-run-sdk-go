@@ -49,7 +49,12 @@ func New(settings *Settings) *types.Route {
 				return
 			}
 
-			request.Input = settings.OnModifyInput(session, path, request.Input)
+			if input, err := settings.OnModifyInput(session, path, request.Input); err != nil {
+				utils.InternalServerError(w)
+				return
+			} else {
+				request.Input = input
+			}
 		}
 
 		var data interface{}
