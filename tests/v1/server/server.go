@@ -44,8 +44,6 @@ var (
 		{Id: "jiri"},
 		{Id: "larry"},
 		{Id: "alan"},
-		{Id: "terence"},
-		{Id: "eckhart"},
 	}
 )
 
@@ -77,15 +75,15 @@ func (w *webServer) Listen() error {
 		}
 	}
 
-	install := func(route *types.Route, path string) {
-		router.HandleFunc(path, route.Handler).Methods(route.Method)
+	install := func(proxy *types.Proxy, path string) {
+		router.HandleFunc(path, proxy.Handler).Methods(proxy.Method)
 	}
 
 	getSession := types.SessionFromValues(tenant, subject)
 
 	// Client handlers.
 	{
-		//Get data.
+		// Get data.
 		install(get_data.New(
 			&get_data.Settings{
 				Client:  w.settings.Client,

@@ -17,7 +17,7 @@ type Settings struct {
 	GetSession types.GetSession
 }
 
-func New(settings *Settings) *types.Route {
+func New(settings *Settings) *types.Proxy {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if !utils.HasMethod(w, r, http.MethodGet) {
 			return
@@ -42,7 +42,7 @@ func New(settings *Settings) *types.Route {
 		utils.WriteResponse(w, response)
 	}
 
-	return &types.Route{
+	return &types.Proxy{
 		Method:  http.MethodGet,
 		Handler: handler,
 	}

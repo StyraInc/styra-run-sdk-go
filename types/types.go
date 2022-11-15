@@ -2,7 +2,7 @@ package types
 
 import "net/http"
 
-type Route struct {
+type Proxy struct {
 	Method  string
 	Handler http.HandlerFunc
 }
