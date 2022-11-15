@@ -37,11 +37,11 @@ In Styra Run, you interact with projects created through the UI or API. Projects
 
 ### Url
 
-The client is bound to a specific environment within a project. The url should be of the following format:
+The client is bound to a specific environment within a project. You can find this url in the environment section of your project's overview page. It should have a format similar to the following:
 
-`https://api-test.styra.com/v1/projects/{user}/{project}/envs/{env}`
+`https://api.run.styra.com/v1/projects/{user}/{project}/envs/{env}`
 
-Here, `user`, `project`, and `env` refer to a specific Styra Run user, project and environment, respectively.
+Here, `user`, `project`, and `env` refer to a specific Styra Run user, project, and environment, respectively.
 
 ### Discovery
 
@@ -119,8 +119,7 @@ Allows you to execute multiple queries at once. Note that the client will seamle
 queries := make([]api.Query, 0)
 
 for i := 0; i < 64; i++ {
-    queries = append(
-        queries,
+    queries = append(queries,
         api.Query{
             Path:  query,
             Input: input,
@@ -128,7 +127,7 @@ for i := 0; i < 64; i++ {
     )
 }
 
-err := client.BatchQuery(ctx, queries, nil)
+err := client.BatchQuery(ctx, queries, input)
 ```
 
 ## Initialize RBAC
@@ -196,11 +195,11 @@ result, err := myRbac.ListUserBindings(ctx, session, users)
 ### GetUserBinding
 
 ```golang
-bruce := &rbac.User{
+user := &rbac.User{
     Id: "bruce",
 }
 
-result, err := myRbac.GetUserBinding(ctx, session, bruce)
+result, err := myRbac.GetUserBinding(ctx, session, user)
 ```
 
 ### PutUserBinding
@@ -210,22 +209,21 @@ binding := &rbac.UserBinding{
     Roles: []string{"OWNER"},
 }
 
-err := myRbac.PutUserBinding(ctx, session, bruce, binding)
+err := myRbac.PutUserBinding(ctx, session, user, binding)
 ```
 
 ### DeleteUserBinding
 
 ```golang
-err := myRbac.DeleteUserBinding(ctx, session, bruce)
+err := myRbac.DeleteUserBinding(ctx, session, user)
 ```
 
 ## Proxies
 
-To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of some client and all RBAC functions. The proxies generate routes that look like the following:
+To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of most client and all RBAC functions. The proxies generate routes that look like the following:
 
 ```golang
 type Route struct {
-    Path    string
     Method  string
     Handler http.HandlerFunc
 }
