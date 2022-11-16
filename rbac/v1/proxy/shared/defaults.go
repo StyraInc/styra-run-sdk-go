@@ -17,8 +17,8 @@ func DefaultGetUsers(users []*rbac.User, size int) GetUsers {
 			return nil, nil, err
 		}
 
-		if page < 0 {
-			page = 0
+		if page < 1 {
+			page = 1
 		}
 
 		if size < 0 {
@@ -26,7 +26,7 @@ func DefaultGetUsers(users []*rbac.User, size int) GetUsers {
 		}
 
 		values := make([]*rbac.User, 0)
-		for i, end := page*size, page*size+size; i < end; i++ {
+		for i, end := (page-1)*size, (page-1)*size+size; i < end; i++ {
 			if i < len(users) {
 				values = append(values, users[i])
 			}
