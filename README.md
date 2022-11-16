@@ -220,69 +220,138 @@ err := myRbac.DeleteUserBinding(ctx, session, user)
 
 ## Proxies
 
-To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of most client and all RBAC functions. The proxies generate routes that look like the following:
+To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of most client and all RBAC functions. Each proxy emits the following:
 
 ```golang
-type Route struct {
+type Proxy struct {
     Method  string
     Handler http.HandlerFunc
 }
 ```
 
-Here, `Path` is the suffix used for a route. For example, for the `GetRoles` RBAC function, `Path` is `/roles` and `Method` is `GET`. You can use this information to install the handlers in your own web server.
+Here, `Method` is the HTTP method that's expected and `Handler` is the HTTP handler function that you can embed in your own web server. How you bind said handler to a route is entirely up to you and what HTTP routing library you are using. Each proxy implementation is self contained and has it's own set of requirements.
 
-The client proxy exposes the `BatchQuery` function which is used by the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) to make UI rendering decisions. The rbac proxy exposes all RBAC functions.
-
-## Initialize the client proxy
+As an example, in the code below we use the `gorilla/mux` HTTP router to serve the various proxies. First we'll need some code like the following:
 
 ```golang
-package main
+"github.com/gorilla/mux"
+"github.com/styrainc/styra-run-sdk-go/types"
 
-import (
-    api "github.com/styrainc/styra-run-sdk-go/api/v1"
-    "github.com/styrainc/styra-run-sdk-go/api/v1/proxy"
+// Initialize the client ..
+client := ..
+
+// Initialize rbac ..
+myRbac := ..
+
+// Instantiate a new `gorilla/mux` router.
+router := mux.NewRouter()
+
+// Extracts HTTP route parameters. For example, for a route 
+// like `/foo/{id}`, extracts the `id` parameter.
+key := func(key string) types.GetVar {
+    return func(r *http.Request) string {
+        return mux.Vars(r)[key]
+    }
+}
+
+// Given a proxy, install it with a specific route and method.
+install := func(proxy *types.Proxy, path string) {
+    router.HandleFunc(path, proxy.Handler).Methods(proxy.Method)
+}
+
+// A function to extract session information. There are a few
+// provided, but you will likely want to roll your own.
+getSession := types.SessionFromValues(tenant, subject)
+```
+
+## Client proxies
+
+The following sections show all proxies minimally configured. Some proxies have additional settings. Please see the code for each proxy for further details. Also, default implementations for some callbacks can be found here:
+
+```golang
+"github.com/styrainc/styra-run-sdk-go/api/v1/proxy/shared/defaults.go"
+```
+
+### Query
+
+```golang
+"github.com/styrainc/styra-run-sdk-go/api/v1/proxy/query"
+
+// Query.
+install(query.New(
+    &query.Settings{
+        Client:  client,
+        GetPath: key("path"),
+    }), "/query/{path:.*}",
 )
+```
 
-func main() {
-    // Initialize the client ..
-    
-    myProxy := proxy.New(
-        &proxy.Settings{
-            Client:    client,
-            Callbacks: proxy.DefaultCallbacks(
-                &proxy.DefaultCallbackSettings{
-                    GetSession: api.SessionFromValues("acmecorp", "alice"),
-                },
-            ),
-        },
-    )
+```
+POST /query/tickets/resolve/allow
+{
+    "input": {
+        "tenant": "acmecorp",
+        "subject": "alice"
+    }
+}
+
+->
+
+{
+    "result": true
 }
 ```
 
-Here, `Callbacks` is a struct containing the following functions:
-
-| Callback | Description | Required |
-| --- | --- | --- |
-| `GetSession` | Extracts `session` information from the http request. There are several implementations provided that pull `session` information from HTTP cookies, the `context`, and so on. You can also implement your own. | yes |
-| `OnModifyBatchQueryInput` | Allows the programmer to inject values into each query input field and the global input field. The default implementation automatically injects the tenant and subject. | no |
-
-## Use the client proxy
-
-The following routes are available on the proxy:
+### Check
 
 ```golang
-type Proxy interface {
-    BatchQuery() *Route
-    All() map[RouteType]*Route
-}
+"github.com/styrainc/styra-run-sdk-go/api/v1/proxy/check"
+
+// Check.
+install(check.New(
+    &check.Settings{
+        Client:  client,
+        GetPath: key("path"),
+    }), "/check/{path:.*}",
+)
 ```
 
-The routes have the following shape:
+```
+POST /check/tickets/resolve/allow
+{
+    "input": {
+        "tenant": "acmecorp",
+        "subject": "alice"
+    }
+}
+
+->
+
+{
+    "result": true
+}
+```
 
 ### BatchQuery
 
+```golang
+"github.com/styrainc/styra-run-sdk-go/api/v1/proxy/batch_query"
+"github.com/styrainc/styra-run-sdk-go/api/v1/proxy/shared"
+
+// Batch query.
+install(batch_query.New(
+    &batch_query.Settings{
+        Client:        client,
+        GetSession:    getSession,
+        OnModifyInput: shared.DefaultOnModifyInput(),
+    }), "/batch_query",
+)
 ```
-POST /
+
+Here we're using the `GetSession` and `OnModifyInput` callbacks to inject session information into every `input` section of the request body.
+
+```
+POST /batch_query
 {
     "items": [
         {
@@ -316,82 +385,29 @@ POST /
 }
 ```
 
-## Initialize the RBAC proxy
+## RBAC proxies
+
+The following sections show all proxies minimally configured. Some proxies have additional settings. Please see the code for each proxy for further details. Also, default implementations for some callbacks can be found here:
 
 ```golang
-package main
-
-import (
-    "github.com/gorilla/mux"
-
-    api "github.com/styrainc/styra-run-sdk-go/api/v1"
-    rbac "github.com/styrainc/styra-run-sdk-go/rbac/v1"
-    "github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy"
-)
-
-var (
-    users = []*rbac.User{
-        {Id: "alice"},
-        {Id: "bob"},
-        {Id: "bryan"},
-        {Id: "cesar"},
-        {Id: "emily"},
-    }
-)
-
-func main() {
-    // Initialize the client ..
-
-    myProxy := proxy.New(
-        &proxy.Settings{
-            Client:    client,
-            GetUrlVar: func(r *http.Request, key string) string {
-                return mux.Vars(r)[key]
-            },
-            Callbacks: proxy.ArrayCallbacks(
-                &proxy.ArrayCallbackSettings{
-                    GetSession: api.SessionFromValues("acmecorp", "alice"),
-                    Users:      users,
-                    PageSize:   2,
-                },
-            ),
-        },
-    )
-}
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/shared/defaults.go"
 ```
 
-Here, `GetUrlVar` tells the proxy how to extract url parameters. For example, if the route's `Path` is `/user_bindings/{id}`, this function should emit the part of the url that corresponds to the string `"id"`. How this value is extracted depends on the web server library you are using. The example above assumes the [gorilla/mux](https://github.com/gorilla/mux) library.
-
-`Callbacks` is a struct containing the following functions:
-
-| Callback | Description | Required |
-| --- | --- | --- |
-| `GetSession` | This is the same as the client proxy. | yes |
-| `GetUsers` | This callback is used by the `ListUserBindings` proxy. It allows the proxy to page users (and hence user bindings) in and out. If omitted, all user bindings are emitted and pagination is ignored. See below for more details. | no |
-| `OnGetUserBinding` | Control whether `GetUserBinding` is allowed. | no |
-| `OnPutUserBinding` | Control whether `PutUserBinding` is allowed. | no |
-| `OnDeleteUserBinding` | Control whether `DeleteUserBinding` is allowed. | no |
-
-## Use the RBAC proxy
-
-The following routes are available on the proxy:
+### GetRoles
 
 ```golang
-type Proxy interface {
-    GetRoles() *Route
-    ListUserBindings() *Route
-    GetUserBinding() *Route
-    PutUserBinding() *Route
-    DeleteUserBinding() *Route
-    All() map[RouteType]*Route
-}
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/get_roles"
+
+// Get roles.
+install(get_roles.New(
+    &get_roles.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+    }), "/roles",
+)
 ```
 
-The routes have the following shape:
-
-### GetRoles 
-
- ``` 
+```
 GET /roles 
 
 -> 
@@ -404,47 +420,128 @@ GET /roles
 } 
 ``` 
 
-### ListUserBindings 
+### ListUserBindingsAll
 
-``` 
-GET /user_bindings?page=3 
+```golang
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/list_user_bindings_all"
+
+// List user bindings all.
+install(list_user_bindings_all.New(
+    &list_user_bindings_all.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+    }), "/user_bindings_all",
+)
+```
+
+```
+GET /user_bindings_all
 
 -> 
 
-{ 
-    "result": [ 
-        { 
-            "id": "alice", 
-            "roles": [ 
-                "ADMIN" 
-            ] 
-        }, 
-        { 
-            "id": "bob", 
-            "roles": [ 
-                "VIEWER" 
-            ] 
-        }, 
-        { 
-            "id": "bryan", 
-            "roles": [] 
-        } 
-    ], 
-    "page": { 
-        "index": 0, 
-        "total": 4 
-    } 
-} 
-``` 
+{
+    "result": [
+        {
+            "id": "alice",
+            "roles": [
+                "ADMIN"
+            ]
+        },
+        {
+            "id": "billy",
+            "roles": [
+                "VIEWER"
+            ]
+        },
+        {
+            "id": "bob",
+            "roles": [
+                "MASTER"
+            ]
+        }
+    ]
+}
+```
 
-Here, the input bytes to `GetUsers` is the string `"3"` from the `page=3` query parameter. The output should contain a list of users for that page and an `interface{}` that serves as the value for the `"page"` key in the response. Notice that how the users are paged is ultimately up to the programmer. It's important to note, however, that the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) assumes the above structure so you must follow suit if you want to use it. See `rbac/v1/proxy/callbacks.go` for a concrete example that stores users in an array.
+### ListUserBindings
 
-If the programmer does not provide a `GetUsers` callback, the proxy will internally call `ListUserBindingsAll`, emitting _all_ user bindings and ignoring pagination.
+```golang
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/list_user_bindings"
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/shared"
+
+// In this version we control the list of users 
+// and lookup bindings for them directly.
+users := []*rbac.User{
+    {Id: "alice"},
+    {Id: "bob"},
+    {Id: "bryan"},
+    {Id: "cesar"},
+    {Id: "emily"},
+    {Id: "gary"},
+    {Id: "henry"},
+    {Id: "kevin"},
+    {Id: "lynn"},
+    {Id: "jiri"},
+    {Id: "larry"},
+    {Id: "alan"},
+}
+
+// List user bindings.
+install(list_user_bindings.New(
+    &list_user_bindings.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+        GetUsers:   shared.DefaultGetUsers(users, 3),
+    }), "/user_bindings",
+)
+```
+
+```
+GET /user_bindings?page=1
+
+->
+
+{
+    "result": [
+        {
+            "id": "cesar",
+            "roles": []
+        },
+        {
+            "id": "emily",
+            "roles": []
+        },
+        {
+            "id": "gary",
+            "roles": []
+        }
+    ],
+    "page": {
+        "index": 1,
+        "total": 4
+    }
+}
+```
+
+Here, the input bytes to `GetUsers` is the string `"3"` from the `page=3` query parameter. The output should contain a list of users for that page and an `interface{}` that serves as the value for the `"page"` key in the response. Notice that how the users are paged is ultimately up to the programmer. It's important to note, however, that the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) assumes the above structure so you must follow suit if you want to use it.
 
 ### GetUserBinding
 
+```golang
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/get_user_binding"
+
+// Get user binding.
+install(get_user_binding.New(
+    &get_user_binding.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+        GetId:      key("id"),
+    }), "/user_bindings/{id}",
+)
 ```
-GET /user_bindings/{id}
+
+```
+GET /user_bindings/alice
 
 ->
 
@@ -457,8 +554,21 @@ GET /user_bindings/{id}
 
 ### PutUserBinding
 
+```golang
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/put_user_binding"
+
+// Put user binding.
+install(put_user_binding.New(
+    &put_user_binding.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+        GetId:      key("id"),
+    }), "/user_bindings/{id}",
+)
 ```
-PUT /user_bindings/{id}
+
+```
+PUT /user_bindings/alice
 [
     "VIEWER"
 ]
@@ -470,16 +580,23 @@ PUT /user_bindings/{id}
 
 ### DeleteUserBinding
 
+```golang
+"github.com/styrainc/styra-run-sdk-go/rbac/v1/proxy/delete_user_binding"
+
+// Delete user binding.
+install(delete_user_binding.New(
+    &delete_user_binding.Settings{
+        Rbac:       myRbac,
+        GetSession: getSession,
+        GetId:      key("id"),
+    }), "/user_bindings/{id}",
+)
 ```
-DELETE /user_bindings/{id}
+
+```
+DELETE /user_bindings/alice
 
 ->
 
 {}
 ```
-
-## Examples
-
-If you do not wish to write your own web server, we provide the following concrete implementations which you can find in `examples/v1/proxies`:
-
-* [gorilla/mux](https://github.com/gorilla/mux)
