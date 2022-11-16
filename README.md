@@ -37,11 +37,7 @@ In Styra Run, you interact with projects created through the UI or API. Projects
 
 ### Url
 
-The client is bound to a specific environment within a project. You can find this url in the environment section of your project's overview page. It should have a format similar to the following:
-
-`https://api.run.styra.com/v1/projects/{user}/{project}/envs/{env}`
-
-Here, `user`, `project`, and `env` refer to a specific Styra Run user, project, and environment, respectively.
+The client is bound to a specific environment within a project. You can find this url in the environment section of your project's overview page.
 
 ### Discovery
 
@@ -220,7 +216,7 @@ err := myRbac.DeleteUserBinding(ctx, session, user)
 
 ## Proxies
 
-To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of most client and all RBAC functions. Each proxy emits the following:
+To make it easier for the programmer to serve the SDK in their own web servers we provide proxy implementations of most client functions and all RBAC functions. Each proxy emits the following:
 
 ```golang
 type Proxy struct {
@@ -342,13 +338,12 @@ POST /check/tickets/resolve/allow
 install(batch_query.New(
     &batch_query.Settings{
         Client:        client,
-        GetSession:    getSession,
-        OnModifyInput: shared.DefaultOnModifyInput(),
+        OnModifyInput: shared.DefaultOnModifyInput(getSession),
     }), "/batch_query",
 )
 ```
 
-Here we're using the `GetSession` and `OnModifyInput` callbacks to inject session information into every `input` section of the request body.
+Here we're using the `OnModifyInput` callback to inject session information into every `input` section of the request body.
 
 ```
 POST /batch_query
