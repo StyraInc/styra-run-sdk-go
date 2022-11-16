@@ -14,7 +14,10 @@ type ListUserBindingsAllResponse struct {
 }
 
 type Settings struct {
-	Rbac       rbac.Rbac
+	// The SDK rbac instance.
+	Rbac rbac.Rbac
+
+	// A callback to get session information.
 	GetSession types.GetSession
 }
 

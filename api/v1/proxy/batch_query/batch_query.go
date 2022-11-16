@@ -28,7 +28,12 @@ type BatchQueryResponse struct {
 }
 
 type Settings struct {
-	Client        api.Client
+	// The SDK client.
+	Client api.Client
+
+	// Two optional callbacks that must be specified together:
+	// GetSession:    A callback to get session information.
+	// OnModifyInput: A callback to modify query inputs.
 	GetSession    types.GetSession
 	OnModifyInput shared.OnModifyInput
 }

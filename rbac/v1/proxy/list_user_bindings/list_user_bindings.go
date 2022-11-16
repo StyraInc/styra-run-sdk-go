@@ -15,9 +15,15 @@ type ListUserBindingsResponse struct {
 }
 
 type Settings struct {
-	Rbac       rbac.Rbac
+	// The SDK rbac instance.
+	Rbac rbac.Rbac
+
+	// A callback to get session information.
 	GetSession types.GetSession
-	GetUsers   shared.GetUsers
+
+	// A callback that, given an HTTP request and `page` query parameter
+	// details, emits a list of users and corresponding page information.
+	GetUsers shared.GetUsers
 }
 
 func New(settings *Settings) *types.Proxy {

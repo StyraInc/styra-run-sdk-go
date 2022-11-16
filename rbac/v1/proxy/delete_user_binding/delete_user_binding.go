@@ -12,9 +12,16 @@ import (
 type DeleteUserBindingResponse struct{}
 
 type Settings struct {
-	Rbac           rbac.Rbac
-	GetSession     types.GetSession
-	GetId          types.GetVar
+	// The SDK rbac instance.
+	Rbac rbac.Rbac
+
+	// A callback to get session information.
+	GetSession types.GetSession
+
+	// A callback to get the user id.
+	GetId types.GetVar
+
+	// An optional callback called before user bindings are accessed.
 	OnBeforeAccess shared.OnBeforeAccess
 }
 

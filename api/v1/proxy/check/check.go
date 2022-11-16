@@ -18,8 +18,15 @@ type CheckResponse struct {
 }
 
 type Settings struct {
-	Client        api.Client
-	GetPath       types.GetVar
+	// The SDK client.
+	Client api.Client
+
+	// A callback to get the query path.
+	GetPath types.GetVar
+
+	// Two optional callbacks that must be specified together:
+	// GetSession:    A callback to get session information.
+	// OnModifyInput: A callback to modify query inputs.
 	GetSession    types.GetSession
 	OnModifyInput shared.OnModifyInput
 }
