@@ -504,15 +504,19 @@ GET /user_bindings?page=1
 {
     "result": [
         {
-            "id": "cesar",
-            "roles": []
+            "id": "alice",
+            "roles": [
+                "ADMIN"
+            ]
         },
         {
-            "id": "emily",
-            "roles": []
+            "id": "bob",
+            "roles": [
+                "VIEWER"
+            ]
         },
         {
-            "id": "gary",
+            "id": "bryan",
             "roles": []
         }
     ],
@@ -523,7 +527,7 @@ GET /user_bindings?page=1
 }
 ```
 
-Here, the input bytes to `GetUsers` is the string `"3"` from the `page=3` query parameter. The output should contain a list of users for that page and an `interface{}` that serves as the value for the `"page"` key in the response. Notice that how the users are paged is ultimately up to the programmer. It's important to note, however, that the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) assumes the above structure so you must follow suit if you want to use it.
+Here, the input bytes to `GetUsers` is the string `"1"` from the `page=1` query parameter. The output should contain a list of users for that page and an `interface{}` that serves as the value for the `"page"` key in the response. Notice that how the users are paged is ultimately up to the programmer. It's important to note, however, that the [frontend SDK](https://github.com/StyraInc/styra-run-sdk-js) assumes the above structure so you must follow suit if you want to use it.
 
 ### GetUserBinding
 
