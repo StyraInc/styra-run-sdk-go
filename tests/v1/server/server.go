@@ -127,8 +127,7 @@ func (w *webServer) Listen() error {
 		install(batch_query.New(
 			&batch_query.Settings{
 				Client:        w.settings.Client,
-				GetSession:    getSession,
-				OnModifyInput: ashared.DefaultOnModifyInput(),
+				OnModifyInput: ashared.DefaultOnModifyInput(getSession),
 			}), "/batch_query",
 		)
 	}
