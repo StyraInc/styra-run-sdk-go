@@ -1,14 +1,20 @@
 package shared
 
 import (
-	api "github.com/styrainc/styra-run-sdk-go/types"
+	"net/http"
+
+	"github.com/styrainc/styra-run-sdk-go/types"
 )
 
-// Default callback that adds session information to an input section.
-func DefaultOnModifyInput() OnModifyInput {
-	return func(session *api.Session, path string, input interface{}) (interface{}, error) {
+func DefaultOnModifyInput(getSession types.GetSession) OnModifyInput {
+	return func(r *http.Request, path string, input interface{}) (interface{}, error) {
 		if input == nil {
 			input = make(map[string]interface{})
+		}
+
+		session, err := getSession(r)
+		if err != nil {
+			return nil, err
 		}
 
 		if values, ok := input.(map[string]interface{}); ok {

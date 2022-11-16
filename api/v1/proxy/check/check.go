@@ -24,10 +24,7 @@ type Settings struct {
 	// A callback to get the query path.
 	GetPath types.GetVar
 
-	// Two optional callbacks that must be specified together:
-	// GetSession:    A callback to get session information.
-	// OnModifyInput: A callback to modify query inputs.
-	GetSession    types.GetSession
+	// Optional callback to modify query inputs.
 	OnModifyInput shared.OnModifyInput
 }
 
@@ -49,14 +46,8 @@ func New(settings *Settings) *types.Proxy {
 		path := settings.GetPath(r)
 
 		// Allow the user to modify inputs if the callback is set.
-		if settings.GetSession != nil && settings.OnModifyInput != nil {
-			session, err := settings.GetSession(r)
-			if err != nil {
-				utils.AuthzError(w, err)
-				return
-			}
-
-			if input, err := settings.OnModifyInput(session, path, request.Input); err != nil {
+		if settings.OnModifyInput != nil {
+			if input, err := settings.OnModifyInput(r, path, request.Input); err != nil {
 				utils.InternalServerError(w)
 				return
 			} else {
