@@ -1,7 +1,5 @@
 package shared
 
-import (
-	api "github.com/styrainc/styra-run-sdk-go/types"
-)
+import "net/http"
 
-type OnModifyInput func(session *api.Session, path string, input interface{}) (interface{}, error)
+type OnModifyInput func(r *http.Request, path string, input interface{}) (interface{}, error)

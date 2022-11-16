@@ -31,10 +31,7 @@ type Settings struct {
 	// The SDK client.
 	Client api.Client
 
-	// Two optional callbacks that must be specified together:
-	// GetSession:    A callback to get session information.
-	// OnModifyInput: A callback to modify query inputs.
-	GetSession    types.GetSession
+	// Optional callback to modify query inputs.
 	OnModifyInput shared.OnModifyInput
 }
 
@@ -66,14 +63,8 @@ func New(settings *Settings) *types.Proxy {
 		}
 
 		// Allow the user to modify inputs if the callback is set.
-		if settings.GetSession != nil && settings.OnModifyInput != nil {
-			session, err := settings.GetSession(r)
-			if err != nil {
-				utils.AuthzError(w, err)
-				return
-			}
-
-			if input, err := settings.OnModifyInput(session, "", request.Input); err != nil {
+		if settings.OnModifyInput != nil {
+			if input, err := settings.OnModifyInput(r, "", request.Input); err != nil {
 				utils.InternalServerError(w)
 				return
 			} else {
@@ -81,7 +72,7 @@ func New(settings *Settings) *types.Proxy {
 			}
 
 			for i := range queries {
-				if input, err := settings.OnModifyInput(session, queries[i].Path, queries[i].Input); err != nil {
+				if input, err := settings.OnModifyInput(r, queries[i].Path, queries[i].Input); err != nil {
 					utils.InternalServerError(w)
 					return
 				} else {
