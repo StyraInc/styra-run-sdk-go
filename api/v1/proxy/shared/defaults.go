@@ -18,13 +18,8 @@ func DefaultOnModifyInput(getSession types.GetSession) OnModifyInput {
 		}
 
 		if values, ok := input.(map[string]interface{}); ok {
-			_, a := values["tenant"]
-			_, b := values["subject"]
-
-			if !a && !b {
-				values["tenant"] = session.Tenant
-				values["subject"] = session.Subject
-			}
+			values["tenant"] = session.Tenant
+			values["subject"] = session.Subject
 		}
 
 		return input, nil
