@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sort"
 
 	api "github.com/styrainc/styra-run-sdk-go/api/v1"
@@ -100,26 +101,28 @@ func (r *rbac) ListUserBindings(ctx context.Context, session *types.Session, use
 		return nil, authzError
 	}
 
-	data := make(map[string][]string)
-	url := fmt.Sprintf(listUserBindingsFormat, session.Tenant)
-	if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
-		return nil, err
-	}
-
 	result := make([]*UserBinding, 0)
 	for _, user := range users {
-		roles := make([]string, 0)
-		if values, ok := data[user.Id]; ok {
-			roles = values
+		data := make([]string, 0)
+		url := fmt.Sprintf(userBindingFormat, session.Tenant, user.Id)
+
+		// To make this even remotely usable for customers at the moment, we are making
+		// one request per user. Since most folks will use it through the proxy, which is
+		// paginated, this will avoid querying for all users. We should switch to the new
+		// pagination stuff in the data plane as soon as possible though. Here we check for
+		// 404's and silently ignore them.
+		if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
+			if httpError, ok := err.(errors.HttpError); ok && httpError.Code() == http.StatusNotFound {
+				data = make([]string, 0)
+			} else {
+				return nil, err
+			}
 		}
 
-		result = append(
-			result,
-			&UserBinding{
-				Id:    user.Id,
-				Roles: roles,
-			},
-		)
+		result = append(result, &UserBinding{
+			Id:    user.Id,
+			Roles: data,
+		})
 	}
 
 	return result, nil
