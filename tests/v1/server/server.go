@@ -35,15 +35,9 @@ var (
 		{Id: "alice"},
 		{Id: "bob"},
 		{Id: "bryan"},
-		{Id: "cesar"},
 		{Id: "emily"},
-		{Id: "gary"},
-		{Id: "henry"},
-		{Id: "kevin"},
-		{Id: "lynn"},
-		{Id: "jiri"},
-		{Id: "larry"},
-		{Id: "alan"},
+		{Id: "harold"},
+		{Id: "vivian"},
 	}
 )
 
