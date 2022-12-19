@@ -101,8 +101,8 @@ func (r *rbac) ListUserBindings(ctx context.Context, session *types.Session, use
 		return nil, authzError
 	}
 
-	result := make([]*UserBinding, 0)
-	for _, user := range users {
+	result := make([]*UserBinding, len(users))
+	for i, user := range users {
 		data := make([]string, 0)
 		url := fmt.Sprintf(userBindingFormat, session.Tenant, user.Id)
 
@@ -113,16 +113,16 @@ func (r *rbac) ListUserBindings(ctx context.Context, session *types.Session, use
 		// 404's and silently ignore them.
 		if err := r.settings.Client.GetData(ctx, url, &data); err != nil {
 			if httpError, ok := err.(errors.HttpError); ok && httpError.Code() == http.StatusNotFound {
-				data = make([]string, 0)
+				// no op
 			} else {
 				return nil, err
 			}
 		}
 
-		result = append(result, &UserBinding{
+		result[i] = &UserBinding{
 			Id:    user.Id,
 			Roles: data,
-		})
+		}
 	}
 
 	return result, nil
